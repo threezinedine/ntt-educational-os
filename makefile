@@ -29,7 +29,7 @@ qemu-debug: $(TARGET_BIN)
 	qemu-system-i386 -fda $(TARGET_BIN) -S -s
 
 gdb: $(TARGET_BIN)
-	$(GDB) -ex "target remote :1234" -ex "set disassembly-flavor intel"
+	$(GDB) -ex "target remote :1234" -ex "set disassembly-flavor intel" -ex "set architecture i386" -ex "break *0x7C00" -ex "continue"
 
 clean:
 	rm -rf $(BUILD_DIR)
