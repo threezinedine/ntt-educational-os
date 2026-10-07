@@ -1,0 +1,16 @@
+#ifndef _CONFIG_H_
+#define _CONFIG_H_
+
+#define PRIVILEGE_RING_0 0x00
+#define PRIVILEGE_RING_1 0x01
+#define PRIVILEGE_RING_2 0x02
+#define PRIVILEGE_RING_3 0x03
+
+#define KERNEL_CODE_SEGMENT 0x08
+#define KERNEL_DATA_SEGMENT 0x10
+#define USER_CODE_SEGMENT	0x18
+#define USER_DATA_SEGMENT	0x20
+
+#define IDT_ENTRIES 256
+
+#endif /* _CONFIG_H_ */

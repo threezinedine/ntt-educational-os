@@ -8,7 +8,7 @@ DINASM = ndisasm
 
 NASM_FLAGS    = -f elf32
 NDISASM_FLAGS = -b 32
-GCC_FLAGS     = -m32 -ffreestanding -O2 -Wall -Wextra -Isrc
+GCC_FLAGS     = -m32 -ffreestanding -O0 -Wall -Wextra -Isrc -g
 
 BUILD_DIR 	    = build
 BUILD_TEMP_DIR  = $(BUILD_DIR)/temp
@@ -30,7 +30,7 @@ GCC_OBJS = $(GCC_SRCS:src/%.c=$(BUILD_TEMP_DIR)/%.c.o)
 
 $(TARGET_BIN): $(BOOT_SRC) $(KERNEL_BIN)
 	$(NASM) -f bin $< -o $(BOOT_BIN)
-	dd if=/dev/zero bs=512 count=5 >> $(KERNEL_BIN)
+	dd if=/dev/zero bs=512 count=20 >> $(KERNEL_BIN)
 	truncate -s %512 $(KERNEL_BIN)
 	$(DINASM) $(NDISASM_FLAGS) $(KERNEL_BIN) > $(BUILD_DEBUG_DIR)/kernel.asm
 	cat $(BOOT_BIN) $(KERNEL_BIN) > $(TARGET_BIN)
@@ -60,6 +60,10 @@ qemu-debug: $(TARGET_BIN)
 
 gdb: $(TARGET_BIN)
 	$(GDB) -ex "target remote :1234" -ex "set disassembly-flavor intel" -ex "set architecture i386" -ex "break *0x7C00" -ex "continue"
+
+gdb-c: $(TARGET_BIN)
+	$(GDB) -ex "target remote :1234" -ex "set disassembly-flavor intel" -ex "set architecture i386" -ex "add-symbol-file $(KERNEL_BIN_ELF) 0x500"
+
 
 show: $(TARGET_BIN)
 	ghex $(TARGET_BIN)
