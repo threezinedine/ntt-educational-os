@@ -9,6 +9,7 @@ static unsigned char* vga_buffer = (unsigned char*)0xB8000;
 static unsigned int cursor_x = 0;
 static unsigned int cursor_y = 0;
 static void			set_pointer_position(int x, int y);
+static void			set_char(char c, int x, int y);
 static void			next_cursor();
 
 void vga_init()
@@ -22,8 +23,7 @@ void vga_clear()
 	{
 		for (int x = 0; x < VGA_WIDTH; x++)
 		{
-			vga_buffer[(y * VGA_WIDTH + x) * 2]		= ' ';
-			vga_buffer[(y * VGA_WIDTH + x) * 2 + 1] = 0x07;
+			set_char(' ', x, y);
 		}
 	}
 	set_pointer_position(0, 0);
@@ -52,10 +52,30 @@ void vga_putc(char c)
 	}
 	else
 	{
-		vga_buffer[(cursor_y * VGA_WIDTH + cursor_x) * 2]	  = c;
-		vga_buffer[(cursor_y * VGA_WIDTH + cursor_x) * 2 + 1] = 0x07;
+		set_char(c, cursor_x, cursor_y);
 		next_cursor();
 	}
+}
+
+void vga_deletec()
+{
+	if (cursor_x > 0)
+	{
+		cursor_x--;
+	}
+	else if (cursor_y > 0)
+	{
+		cursor_y--;
+		cursor_x = VGA_WIDTH - 1;
+	}
+	else
+	{
+		cursor_x = VGA_WIDTH - 1;
+		cursor_y = VGA_HEIGHT - 1;
+	}
+
+	set_char(' ', cursor_x, cursor_y);
+	set_pointer_position(cursor_x, cursor_y);
 }
 
 void vga_print(char* str)
@@ -90,4 +110,10 @@ static void next_cursor()
 		}
 	}
 	set_pointer_position(cursor_x, cursor_y);
+}
+
+static void set_char(char c, int x, int y)
+{
+	vga_buffer[(y * VGA_WIDTH + x) * 2]		= c;
+	vga_buffer[(y * VGA_WIDTH + x) * 2 + 1] = 0x07;
 }

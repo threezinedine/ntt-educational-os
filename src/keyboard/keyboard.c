@@ -24,7 +24,8 @@ static uint8_t extended		 = 0;
 
 static void keyboard_irq_handler(void)
 {
-	uint8_t scancode = inb(KEYBOARD_DATA_PORT);
+	uint8_t scancode  = inb(KEYBOARD_DATA_PORT);
+	uint8_t backspace = 0;
 
 	/* 0xE0 prefixes an extended (arrow/function) key. Ignore those for now. */
 	if (scancode == 0xE0)
@@ -51,6 +52,9 @@ static void keyboard_irq_handler(void)
 
 	switch (scancode)
 	{
+	case 0x0E: /* Backspace */
+		vga_deletec();
+		return;
 	case 0x2A: /* Left shift */
 	case 0x36: /* Right shift */
 		shift_pressed = 1;
