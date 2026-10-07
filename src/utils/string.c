@@ -20,3 +20,13 @@ void memcpy(void* dest, const void* src, uint64_t num)
 		((uint8_t*)dest)[i] = ((const uint8_t*)src)[i];
 	}
 }
+
+uint32_t strlen(const char* str)
+{
+	uint32_t length = 0;
+	while (str[length] != '\0')
+	{
+		length++;
+	}
+	return length;
+}

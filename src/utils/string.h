@@ -6,4 +6,6 @@ void memset(void* ptr, uint8_t value, uint64_t num);
 void memclear(void* ptr, uint64_t num);
 void memcpy(void* dest, const void* src, uint64_t num);
 
+uint32_t strlen(const char* str);
+
 #endif /* _STRING_H_ */
