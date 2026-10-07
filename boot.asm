@@ -9,7 +9,7 @@ start:
     sti
 
     push 0x0500 ; address
-    push 20     ; sectors count
+    push 40     ; sectors count
     push 0x02   ; sector index
     push 0x00   ; head
     push 0x00   ; cylinder

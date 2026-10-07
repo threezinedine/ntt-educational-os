@@ -12,10 +12,6 @@
 typedef void (*idt_handler_t)(void);
 
 error_t idt_init(void);
-error_t idt_setup(uint8_t		interrupt_number,
-				  uint8_t		gate_type,
-				  uint8_t		privilege_level,
-				  uint8_t		segment_selector,
-				  idt_handler_t handler);
+error_t idt_set_handler(uint8_t irq, idt_handler_t handler);
 
 #endif /* _IDT_H_ */

@@ -30,7 +30,7 @@ GCC_OBJS = $(GCC_SRCS:src/%.c=$(BUILD_TEMP_DIR)/%.c.o)
 
 $(TARGET_BIN): $(BOOT_SRC) $(KERNEL_BIN)
 	$(NASM) -f bin $< -o $(BOOT_BIN)
-	dd if=/dev/zero bs=512 count=20 >> $(KERNEL_BIN)
+	dd if=/dev/zero bs=512 count=40 >> $(KERNEL_BIN)
 	truncate -s %512 $(KERNEL_BIN)
 	$(DINASM) $(NDISASM_FLAGS) $(KERNEL_BIN) > $(BUILD_DEBUG_DIR)/kernel.asm
 	cat $(BOOT_BIN) $(KERNEL_BIN) > $(TARGET_BIN)
