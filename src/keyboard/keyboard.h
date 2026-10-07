@@ -7,7 +7,6 @@
 #define KEYBOARD_STATUS_PORT 0x64
 
 /* IRQ line the keyboard is wired to (IRQ1). */
-#define KEYBOARD_IRQ 1
 
 error_t keyboard_init(void);
 
