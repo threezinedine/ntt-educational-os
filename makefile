@@ -1,8 +1,9 @@
-GCC  = ~/opt/cross/bin/i686-elf-gcc
-GPP  = ~/opt/cross/bin/i686-elf-g++
-LD   = ~/opt/cross/bin/i686-elf-ld
-GDB  = ~/opt/cross/bin/i686-elf-gdb
-NASM = nasm
+GCC    = ~/opt/cross/bin/i686-elf-gcc
+GPP    = ~/opt/cross/bin/i686-elf-g++
+LD     = ~/opt/cross/bin/i686-elf-ld
+GDB    = ~/opt/cross/bin/i686-elf-gdb
+OBJCPY = ~/opt/cross/bin/i686-elf-objcopy
+NASM   = nasm
 
 BUILD_DIR 	    = build
 BUILD_TEMP_DIR  = $(BUILD_DIR)/temp
@@ -13,9 +14,24 @@ BOOT_BIN = $(BUILD_TEMP_DIR)/boot.bin
 
 TARGET_BIN = $(BUILD_DIR)/os.bin
 
-$(TARGET_BIN): $(BOOT_SRC) setup
+KERNEL_BIN_ELF = $(BUILD_TEMP_DIR)/kernel.elf
+KERNEL_BIN     = $(BUILD_TEMP_DIR)/kernel.bin
+
+ASM_SRCS = $(wildcard src/**/*.asm src/*.asm)
+ASM_OBJS = $(ASM_SRCS:src/%.asm=$(BUILD_TEMP_DIR)/%.o)
+
+$(TARGET_BIN): $(BOOT_SRC) $(KERNEL_BIN)
 	$(NASM) -f bin $< -o $(BOOT_BIN)
-	cat $(BOOT_BIN) > $(TARGET_BIN)
+	dd if=/dev/zero bs=512 count=5 >> $(KERNEL_BIN)
+	truncate -s %512 $(KERNEL_BIN)
+	cat $(BOOT_BIN) $(KERNEL_BIN) > $(TARGET_BIN)
+
+$(KERNEL_BIN): $(ASM_OBJS)
+	$(LD) -Ttext 0x0500 -m elf_i386 $^ -o $(KERNEL_BIN_ELF)
+	$(OBJCPY) -O binary $(KERNEL_BIN_ELF) $@
+
+$(BUILD_TEMP_DIR)/%.o: src/%.asm setup
+	$(NASM) -f elf32 $< -o $@
 
 setup:
 	mkdir -p $(BUILD_DIR)

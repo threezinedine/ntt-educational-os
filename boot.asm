@@ -6,6 +6,16 @@ start:
     call print
     add esp, 2
 
+    sti
+
+    push 0x0500 ; address
+    push 0x01   ; sectors count
+    push 0x02   ; sector index
+    push 0x00   ; head
+    push 0x00   ; cylinder
+    call load_sectors
+    add esp, 10
+
     cli
 
     lgdt [gdt_descriptor]
@@ -102,8 +112,42 @@ _print_loop_2:
     pop ebp
     ret
 
+load_sectors: ; (cylinder, head, sector, sectors count, start address)
+    push ebp
+    mov ebp, esp
+
+    push disk_load_message
+    call print
+    add esp, 2
+
+    mov bx, [ebp+14]
+    mov ah, 0x02
+    mov al, [ebp+12]  ; sectors count
+    mov ch, [ebp+6] ; cylinder number
+    mov cl, [ebp+10] ; sector index
+    mov dh, [ebp+8] ; head number
+
+    int 0x13          ; Call BIOS to load the sector
+    jc on_disk_load_failure
+
+    push disk_load_success_message
+    call print
+    add esp, 2
+
+    pop ebp
+    ret
+
+on_disk_load_failure:
+    push disk_load_failure_message
+    call print
+    add esp, 2
+    jmp $  ; Hang the system for now
+
 gdt_setup_message: db 'GDT setting up...', 0x0A, 0x0D, 0
 gdt_setup_complete_message: db 'GDT setup complete.', 0x0A, 0x0D, 0
+disk_load_message: db 'Loading disk sector...', 0x0A, 0x0D, 0
+disk_load_success_message: db 'Disk sector loaded successfully.', 0x0A, 0x0D, 0
+disk_load_failure_message: db 'Failed to load disk sector.', 0x0A, 0x0D, 0
 
 [BITS 32]
 protected_mode:
