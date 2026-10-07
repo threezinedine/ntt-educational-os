@@ -86,6 +86,23 @@ void vga_print(char* str)
 	}
 }
 
+void vga_print_hex(uint32_t value)
+{
+	vga_print("0x");
+	for (int i = 28; i >= 0; i -= 4)
+	{
+		uint8_t nibble = (value >> i) & 0xF;
+		if (nibble < 10)
+		{
+			vga_putc('0' + nibble);
+		}
+		else
+		{
+			vga_putc('A' + (nibble - 10));
+		}
+	}
+}
+
 static void set_pointer_position(int x, int y)
 {
 	cursor_x				= x;
