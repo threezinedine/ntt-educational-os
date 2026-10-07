@@ -90,7 +90,7 @@ error_t idt_init(void)
 
 	load_idt(&idt_descriptor);
 
-	PIC_remap(0x20, 0x28); // Remap PIC to avoid conflicts with CPU exceptions
+	PIC_remap(PIC_OFFSET_1, PIC_OFFSET_2); // Remap PIC to avoid conflicts with CPU exceptions
 
 	/* Mask all IRQs initially. */
 	for (uint8_t irq = 0; irq < 16; ++irq)
@@ -112,6 +112,16 @@ error_t idt_set_handler(uint8_t irq, idt_handler_t handler)
 	idt_handlers[irq] = handler;
 
 	return OK;
+}
+
+void idt_enable_irq(uint8_t irq)
+{
+	IRQ_clear_mask(irq);
+}
+
+void idt_disable_irq(uint8_t irq)
+{
+	IRQ_set_mask(irq);
 }
 
 static error_t idt_setup(uint8_t	   interrupt_number,
@@ -156,6 +166,14 @@ void idt_dispatcher(uint32_t interrupt_number)
 	if (idt_handlers[interrupt_number])
 	{
 		idt_handlers[interrupt_number]();
+	}
+
+	/* Hardware IRQs are remapped to vectors PIC_OFFSET_1..PIC_OFFSET_1+15.
+	 * The PIC must be told the interrupt has been handled, otherwise it will
+	 * not deliver any further interrupts of equal or lower priority. */
+	if (interrupt_number >= PIC_OFFSET_1 && interrupt_number < (PIC_OFFSET_1 + 16))
+	{
+		PIC_sendEOI((uint8_t)(interrupt_number - PIC_OFFSET_1));
 	}
 }
 

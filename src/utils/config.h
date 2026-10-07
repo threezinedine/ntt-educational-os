@@ -11,6 +11,11 @@
 #define USER_CODE_SEGMENT	0x18
 #define USER_DATA_SEGMENT	0x20
 
+#define PIC_OFFSET_1 0x20
+#define PIC_OFFSET_2 0x28
+
+#define PIC_KEYBOARD_IRQ (PIC_OFFSET_1 + 1)
+
 #define IDT_ENTRIES 256
 
 #endif /* _CONFIG_H_ */

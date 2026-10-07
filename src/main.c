@@ -1,10 +1,7 @@
 #include "idt/idt.h"
+#include "keyboard/keyboard.h"
+#include "utils/utils.h"
 #include "vga/vga.h"
-
-void handle_10()
-{
-	vga_print("Handling interrupt 10\n");
-}
 
 void kernel_main()
 {
@@ -14,9 +11,13 @@ void kernel_main()
 
 	vga_print("Setting the IDT...\n");
 	idt_init();
-	idt_set_handler(10, handle_10);
 
 	vga_print("IDT Set!\n");
+
+	vga_print("Setting up keyboard...\n");
+	keyboard_init();
+
+	vga_print("Keyboard ready! Type something:\n");
 
 	for (;;)
 	{

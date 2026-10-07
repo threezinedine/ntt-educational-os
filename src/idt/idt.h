@@ -14,4 +14,7 @@ typedef void (*idt_handler_t)(void);
 error_t idt_init(void);
 error_t idt_set_handler(uint8_t irq, idt_handler_t handler);
 
+void idt_enable_irq(uint8_t irq);
+void idt_disable_irq(uint8_t irq);
+
 #endif /* _IDT_H_ */
