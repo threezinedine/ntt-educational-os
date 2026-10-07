@@ -4,6 +4,11 @@ LD     = ~/opt/cross/bin/i686-elf-ld
 GDB    = ~/opt/cross/bin/i686-elf-gdb
 OBJCPY = ~/opt/cross/bin/i686-elf-objcopy
 NASM   = nasm
+DINASM = ndisasm
+
+NASM_FLAGS    = -f elf32
+NDISASM_FLAGS = -b 32
+GCC_FLAGS     = -m32 -ffreestanding -O2 -Wall -Wextra -Isrc
 
 BUILD_DIR 	    = build
 BUILD_TEMP_DIR  = $(BUILD_DIR)/temp
@@ -18,20 +23,29 @@ KERNEL_BIN_ELF = $(BUILD_TEMP_DIR)/kernel.elf
 KERNEL_BIN     = $(BUILD_TEMP_DIR)/kernel.bin
 
 ASM_SRCS = $(wildcard src/**/*.asm src/*.asm)
-ASM_OBJS = $(ASM_SRCS:src/%.asm=$(BUILD_TEMP_DIR)/%.o)
+ASM_OBJS = $(ASM_SRCS:src/%.asm=$(BUILD_TEMP_DIR)/%.asm.o)
+
+GCC_SRCS = $(wildcard src/**/*.c src/*.c)
+GCC_OBJS = $(GCC_SRCS:src/%.c=$(BUILD_TEMP_DIR)/%.c.o)
 
 $(TARGET_BIN): $(BOOT_SRC) $(KERNEL_BIN)
 	$(NASM) -f bin $< -o $(BOOT_BIN)
 	dd if=/dev/zero bs=512 count=5 >> $(KERNEL_BIN)
 	truncate -s %512 $(KERNEL_BIN)
+	$(DINASM) $(NDISASM_FLAGS) $(KERNEL_BIN) > $(BUILD_DEBUG_DIR)/kernel.asm
 	cat $(BOOT_BIN) $(KERNEL_BIN) > $(TARGET_BIN)
 
-$(KERNEL_BIN): $(ASM_OBJS)
-	$(LD) -Ttext 0x0500 -m elf_i386 $^ -o $(KERNEL_BIN_ELF)
+$(KERNEL_BIN): $(ASM_OBJS) $(GCC_OBJS)
+	$(LD) -T linker.ld $^ -o $(KERNEL_BIN_ELF)
 	$(OBJCPY) -O binary $(KERNEL_BIN_ELF) $@
 
-$(BUILD_TEMP_DIR)/%.o: src/%.asm setup
-	$(NASM) -f elf32 $< -o $@
+$(BUILD_TEMP_DIR)/%.asm.o: src/%.asm setup
+	@mkdir -p $(dir $@)
+	$(NASM) ${NASM_FLAGS} $< -o $@
+
+$(BUILD_TEMP_DIR)/%.c.o: src/%.c setup
+	@mkdir -p $(dir $@)
+	$(GCC) $(GCC_FLAGS) -c $< -o $@
 
 setup:
 	mkdir -p $(BUILD_DIR)
@@ -46,6 +60,9 @@ qemu-debug: $(TARGET_BIN)
 
 gdb: $(TARGET_BIN)
 	$(GDB) -ex "target remote :1234" -ex "set disassembly-flavor intel" -ex "set architecture i386" -ex "break *0x7C00" -ex "continue"
+
+show: $(TARGET_BIN)
+	ghex $(TARGET_BIN)
 
 clean:
 	rm -rf $(BUILD_DIR)

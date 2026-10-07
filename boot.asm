@@ -157,7 +157,8 @@ protected_mode:
     mov fs, eax
     mov gs, eax
     mov ss, eax
-    jmp $
+
+    jmp 0x500
 
 times 510-($-$$) db 0
 dw 0xAA55
