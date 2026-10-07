@@ -2,11 +2,72 @@
 [ORG 0x7C00]
 
 start:
-    push boot_loader_success
+    push gdt_setup_message
     call print
     add esp, 2
 
-    jmp $
+    cli
+
+    lgdt [gdt_descriptor]
+
+    push gdt_setup_complete_message
+    call print
+    add esp, 2
+
+    mov eax, cr0
+    or eax, 0x1
+    mov cr0, eax
+
+    jmp 0x08:protected_mode
+
+gdt_start:
+gdt_null: 
+    dq 0  ; Null descriptor for GDT
+gdt_kernel_code:
+    dw 0xffff ; Limit low: 0xFFFF
+    dw 0x0000 ; Base low: 0x0000
+    db 0x00   ; Base middle: 0x00
+    db 0x9A   ; Present: 1, DPL: 0, Code or Data: 1, Executable: 1, Readable: 1, Accessed: 0
+    db 0xCF   ; Granularity: 1, DB: 1, Long Mode: 0, Reversed: 0, Limit high: 0xF
+    db 0x00   ; Base high: 0x00
+
+gdt_kernel_data:
+    dw 0xffff ; Limit low: 0xFFFF
+    dw 0x0000 ; Base low: 0x0000
+    db 0x00   ; Base middle: 0x00
+    db 0x92   ; Present: 1, DPL: 0, Code or Data: 1, Executable: 0, Writable: 1, Accessed: 0
+    db 0xCF   ; Granularity: 1, DB: 1, Long Mode: 0, Reversed: 0, Limit high: 0xF
+    db 0x00   ; Base high: 0x00
+
+gdt_user_code:
+    dw 0xffff ; Limit low: 0xFFFF
+    dw 0x0000 ; Base low: 0x0000
+    db 0x00   ; Base middle: 0x00
+    db 0xFA   ; Present: 1, DPL: 3, Code or Data: 1, Executable: 1, Readable: 1, Accessed: 0
+    db 0xCF   ; Granularity: 1, DB: 1, Long Mode: 0, Reversed: 0, Limit high: 0xF
+    db 0x00   ; Base high: 0x00
+
+gdt_user_data:
+    dw 0xffff ; Limit low: 0xFFFF
+    dw 0x0000 ; Base low: 0x0000
+    db 0x00   ; Base middle: 0x00
+    db 0xF2   ; Present: 1, DPL: 3, Code or Data: 1, Executable: 0, Writable: 1, Accessed: 0
+    db 0xCF   ; Granularity: 1, DB: 1, Long Mode: 0, Reversed: 0, Limit high: 0xF
+    db 0x00   ; Base high: 0x00
+
+gdt_task_state: ; needa rewrite later
+    dw 0xffff ; Limit low: 0xFFFF
+    dw 0x0000 ; Base low: 0x0000
+    db 0x00   ; Base middle: 0x00
+    db 0x89   ; Present: 1, DPL: 0, Code or Data: 1, Executable: 0, Writable: 1, Accessed: 1
+    db 0x0F   ; Granularity: 0, DB: 0, Long Mode: 0, Reversed: 0, Limit high: 0xF
+    db 0x00   ; Base high: 0x00
+gdt_end:
+
+gdt_descriptor:
+    dw gdt_end - gdt_start - 1
+    dd gdt_start
+
 
 print_char:
     push ebp
@@ -41,7 +102,18 @@ _print_loop_2:
     pop ebp
     ret
 
-boot_loader_success: db 'Boot loader success...', 0
+gdt_setup_message: db 'GDT setting up...', 0x0A, 0x0D, 0
+gdt_setup_complete_message: db 'GDT setup complete.', 0x0A, 0x0D, 0
+
+[BITS 32]
+protected_mode:
+    mov eax, 0x10
+    mov ds, eax
+    mov es, eax
+    mov fs, eax
+    mov gs, eax
+    mov ss, eax
+    jmp $
 
 times 510-($-$$) db 0
 dw 0xAA55
