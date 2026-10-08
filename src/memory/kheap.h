@@ -5,6 +5,7 @@
 
 error_t kinit();
 void*	kalloc(uint32_t size);
+void*	kzalloc(uint32_t size);
 void	kfree(void* ptr);
 error_t kshutdown();
 

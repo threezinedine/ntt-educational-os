@@ -1,6 +1,7 @@
 #include "idt/idt.h"
 #include "keyboard/keyboard.h"
 #include "memory/memory.h"
+#include "paging/paging.h"
 #include "utils/utils.h"
 #include "vga/vga.h"
 
@@ -21,31 +22,15 @@ void kernel_main()
 	vga_print("Keyboard ready! Type something:\n");
 	kinit();
 
-	void* ptr = kalloc(1024);
-	vga_print("ptr : ");
-	vga_print_hex((uint32_t)ptr);
-	vga_print("\n");
+	paging_init();
 
-	void* ptr2 = kalloc(512);
-	vga_print("ptr2: ");
-	vga_print_hex((uint32_t)ptr2);
-	vga_print("\n");
+	page_directory_t default_page_directory = paging_create_page_directory(128 * 1024 * 1024 /* 128 MB */, 1);
+	paging_switch_page_directory(default_page_directory);
+	paging_enable_paging();
 
-	void* ptr3 = kalloc(4212);
-	vga_print("ptr3: ");
-	vga_print_hex((uint32_t)ptr3);
-	vga_print("\n");
-
-	void* ptr4 = kalloc(1025);
-	vga_print("ptr4: ");
-	vga_print_hex((uint32_t)ptr4);
-	vga_print("\n");
-
-	kfree(ptr3);
-	void* ptr5 = kalloc(12);
-	vga_print("ptr5: ");
-	vga_print_hex((uint32_t)ptr5);
-	vga_print("\n");
+	void* ptr  = kalloc(1024);
+	*(int*)ptr = 0x2A;
+	vga_print_hex(*(int*)ptr);
 
 	for (;;)
 	{

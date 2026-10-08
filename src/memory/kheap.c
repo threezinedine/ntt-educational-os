@@ -1,4 +1,5 @@
 #include "kheap.h"
+#include "utils/string.h"
 
 #define KERNEL_BLOCKS_COUNT	 1024 * 1024 * 8
 #define KERNEL_BLOCKS_SIZE	 512
@@ -26,4 +27,14 @@ void kfree(void* ptr)
 error_t kshutdown()
 {
 	return heap_shutdown(&kheap);
+}
+
+void* kzalloc(uint32_t size)
+{
+	void* ptr = heap_alloc(&kheap, size);
+	if (ptr)
+	{
+		memset(ptr, 0, size);
+	}
+	return ptr;
 }

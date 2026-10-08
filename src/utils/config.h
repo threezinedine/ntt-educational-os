@@ -19,4 +19,8 @@
 
 #define IDT_ENTRIES 256
 
+#define PAGE_DIRECTORY_ENTRIES 1024
+#define PAGE_TABLE_ENTRIES	   1024
+#define PAGE_SEGMENT_SIZE	   4096 // 4 KB per page segment
+
 #endif /* _CONFIG_H_ */
