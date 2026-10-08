@@ -1,8 +1,10 @@
 #include "kheap.h"
 
-#define KERNEL_BLOCKS_COUNT	 1024
-#define KERNEL_BLOCKS_SIZE	 1024
+#define KERNEL_BLOCKS_COUNT	 1024 * 1024 * 8
+#define KERNEL_BLOCKS_SIZE	 512
 #define KERNEL_MEMORY_OFFSET 0x100000
+
+// Total 512 B * 1024 * 1024 * 8 = 4 GB
 
 static struct heap kheap;
 
