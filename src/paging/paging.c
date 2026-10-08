@@ -10,12 +10,12 @@
 #define WRITETHROUGH_PAGE	 (1 >> 4)
 #define CACHE_DISABLE_PAGE	 (1 >> 5)
 
-error_t paging_init()
+error_t page_init()
 {
 	return pmm_init(PHYSICAL_PAGES_COUNT);
 }
 
-page_directory_t paging_create_page_directory(uint32_t size, uint8_t root_page)
+page_directory_t page_create_page_directory(uint32_t size, uint8_t root_page)
 {
 	if (size == 0 || size % PAGE_SEGMENT_SIZE != 0)
 	{
@@ -63,7 +63,35 @@ out:
 	return (page_directory_t)page_directory;
 }
 
-error_t paging_shutdown()
+error_t page_destroy_page_directory(page_directory_t page_directory)
+{
+	error_t err = OK;
+
+	void*	 current_page_table = (void*)((uint32_t)page_directory + sizeof(uint32_t) * PAGE_DIRECTORY_ENTRIES);
+	uint32_t page_table_size	= sizeof(uint32_t) * PAGE_TABLE_ENTRIES;
+
+	for (uint32_t i = 0; i < PAGE_DIRECTORY_ENTRIES; i++)
+	{
+		for (uint32_t j = 0; j < PAGE_TABLE_ENTRIES; j++)
+		{
+			uint32_t* current_page_table_entry_ptr = &((uint32_t*)current_page_table)[j];
+
+			if (*current_page_table_entry_ptr & PRESENT_PAGE)
+			{
+				pmm_free_segment((void*)(*current_page_table_entry_ptr & 0xFFFFF000));
+			}
+		}
+
+		current_page_table += page_table_size;
+	}
+
+out:
+	kfree((void*)page_directory);
+
+	return err;
+}
+
+error_t page_shutdown()
 {
 	return pmm_shutdown();
 }

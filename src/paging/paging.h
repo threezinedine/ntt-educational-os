@@ -6,11 +6,12 @@
 typedef void* page_directory_t;
 #define INVALID_PAGE_DIRECTORY ((void*)0)
 
-error_t paging_init();
+error_t page_init();
 
-page_directory_t paging_create_page_directory(uint32_t size, uint8_t root_page);
-error_t			 paging_enable_paging();
-error_t			 paging_switch_page_directory(page_directory_t page_directory);
-error_t			 paging_shutdown();
+page_directory_t page_create_page_directory(uint32_t size, uint8_t root_page);
+error_t			 page_destroy_page_directory(page_directory_t page_directory);
+error_t			 page_enable_paging();
+error_t			 page_switch_page_directory(page_directory_t page_directory);
+error_t			 page_shutdown();
 
 #endif // _PAGING_H_

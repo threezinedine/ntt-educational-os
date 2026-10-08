@@ -22,11 +22,14 @@ void kernel_main()
 	vga_print("Keyboard ready! Type something:\n");
 	kinit();
 
-	paging_init();
+	page_init();
 
-	page_directory_t default_page_directory = paging_create_page_directory(128 * 1024 * 1024 /* 128 MB */, 1);
-	paging_switch_page_directory(default_page_directory);
-	paging_enable_paging();
+	page_directory_t default_page_directory = page_create_page_directory(128 * 1024 * 1024 /* 128 MB */, 1);
+	page_switch_page_directory(default_page_directory);
+	page_enable_paging();
+
+	page_directory_t test_page_directory = page_create_page_directory(128 * 1024 * 1024 /* 128 MB */, 0);
+	page_destroy_page_directory(test_page_directory);
 
 	void* ptr  = kalloc(1024);
 	*(int*)ptr = 0x2A;
