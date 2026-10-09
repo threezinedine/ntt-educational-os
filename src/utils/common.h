@@ -2,6 +2,7 @@
 #define _COMMON_H_
 
 #include "error.h"
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 

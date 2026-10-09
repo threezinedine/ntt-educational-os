@@ -1,8 +1,11 @@
-GCC    = ~/opt/cross/bin/i686-elf-gcc
-GPP    = ~/opt/cross/bin/i686-elf-g++
-LD     = ~/opt/cross/bin/i686-elf-ld
-GDB    = ~/opt/cross/bin/i686-elf-gdb
-OBJCPY = ~/opt/cross/bin/i686-elf-objcopy
+CROSS_BIN_PREFIX = ~/opt/cross/bin/i386
+
+GCC    = $(CROSS_BIN_PREFIX)-elf-gcc
+GPP    = $(CROSS_BIN_PREFIX)-elf-g++
+LD     = $(CROSS_BIN_PREFIX)-elf-ld
+GDB    = $(CROSS_BIN_PREFIX)-elf-gdb
+OBJCPY = $(CROSS_BIN_PREFIX)-elf-objcopy
+QEMU   = qemu-system-i386
 NASM   = nasm
 DINASM = ndisasm
 
@@ -53,10 +56,10 @@ setup:
 	mkdir -p $(BUILD_DEBUG_DIR)
 
 qemu: $(TARGET_BIN)
-	qemu-system-i386 -fda $(TARGET_BIN)
+	$(QEMU) -drive file=$(TARGET_BIN),format=raw,index=0,media=disk
 
 qemu-debug: $(TARGET_BIN)
-	qemu-system-i386 -fda $(TARGET_BIN) -S -s
+	$(QEMU) -drive file=$(TARGET_BIN),format=raw,index=0,media=disk -S -s
 
 gdb: $(TARGET_BIN)
 	$(GDB) -ex "target remote :1234" -ex "set disassembly-flavor intel" -ex "set architecture i386" -ex "break *0x7C00" -ex "continue"

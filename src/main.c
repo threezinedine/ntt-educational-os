@@ -1,3 +1,4 @@
+#include "disk/disk.h"
 #include "idt/idt.h"
 #include "keyboard/keyboard.h"
 #include "memory/memory.h"
@@ -30,6 +31,9 @@ void kernel_main()
 
 	page_directory_t test_page_directory = page_create_page_directory(128 * 1024 * 1024 /* 128 MB */, 0);
 	page_destroy_page_directory(test_page_directory);
+
+	// uint8_t* buffer = kzalloc(1024);
+	// disk_read(0, 1, 2, (uint32_t*)buffer);
 
 	void* ptr  = kalloc(1024);
 	*(int*)ptr = 0x2A;

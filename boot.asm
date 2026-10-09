@@ -2,6 +2,14 @@
 [ORG 0x7C00]
 
 start:
+    cli
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov sp, 0x9000 ; keep the stack clear of the kernel image loaded at 0x500
+    sti
+
     push gdt_setup_message
     call print
     add esp, 2
@@ -9,7 +17,7 @@ start:
     sti
 
     push 0x0500 ; address
-    push 40     ; sectors count
+    push 56     ; sectors count (0x500 + 56*512 must stay below 0x7C00)
     push 0x02   ; sector index
     push 0x00   ; head
     push 0x00   ; cylinder
