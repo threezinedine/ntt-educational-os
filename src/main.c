@@ -29,11 +29,11 @@ void kernel_main()
 	page_switch_page_directory(default_page_directory);
 	page_enable_paging();
 
-	page_directory_t test_page_directory = page_create_page_directory(128 * 1024 * 1024 /* 128 MB */, 0);
-	page_destroy_page_directory(test_page_directory);
+	// page_directory_t test_page_directory = page_create_page_directory(128 * 1024 * 1024 /* 128 MB */, 0);
+	// page_destroy_page_directory(test_page_directory);
 
-	// uint8_t* buffer = kzalloc(1024);
-	// disk_read(0, 1, 2, (uint32_t*)buffer);
+	uint8_t* buffer = kzalloc(1024);
+	disk_read(0, 1, 2, (uint32_t*)buffer);
 
 	void* ptr  = kalloc(1024);
 	*(int*)ptr = 0x2A;
