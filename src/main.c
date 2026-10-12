@@ -42,6 +42,24 @@ void kernel_main()
 	*(int*)ptr = 0x2A;
 	vga_print_hex(*(int*)ptr);
 
+	const char* example_path = "/home/user/docs";
+	struct path p			 = from_c_string(example_path);
+
+	vga_print("Path root: ");
+	char root_buffer[256];
+	path_get_root(&p, root_buffer);
+	vga_print(root_buffer);
+	vga_print("\n");
+
+	while (path_next(&p))
+	{
+		vga_print("Path current: ");
+		char current_buffer[256];
+		path_get_current(&p, current_buffer);
+		vga_print(current_buffer);
+		vga_print("\n");
+	}
+
 	for (;;)
 	{
 	}

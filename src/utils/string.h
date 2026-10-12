@@ -7,5 +7,8 @@ void memclear(void* ptr, uint64_t num);
 void memcpy(void* dest, const void* src, uint64_t num);
 
 uint32_t strlen(const char* str);
+int8_t	 strcmp(const char* str1, const char* str2); // 0: str1 == str2, 1: str1 > str2, -1: str1 < str2
+
+int32_t index_of(const char* str, char c);
 
 #endif /* _STRING_H_ */
