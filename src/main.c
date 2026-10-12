@@ -60,6 +60,8 @@ void kernel_main()
 		vga_print("\n");
 	}
 
+	panic("Reached end of main kernel loop");
+
 	for (;;)
 	{
 	}

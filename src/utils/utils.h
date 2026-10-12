@@ -11,4 +11,6 @@ extern void	   insw(uint16_t port, uint32_t* buffer, uint32_t count);
 
 #include "pathparser.h"
 
+#include "panic.h"
+
 #endif /* _UTILS_H_ */

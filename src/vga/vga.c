@@ -6,8 +6,10 @@ static unsigned char* vga_buffer = (unsigned char*)0xB8000;
 #define VGA_WIDTH  80
 #define VGA_HEIGHT 25
 
-static unsigned int cursor_x = 0;
-static unsigned int cursor_y = 0;
+static uint8_t		text_color		 = TEXT_COLOR_WHITE;
+static uint8_t		background_color = TEXT_COLOR_BLACK;
+static unsigned int cursor_x		 = 0;
+static unsigned int cursor_y		 = 0;
 static void			set_pointer_position(int x, int y);
 static void			set_char(char c, int x, int y);
 static void			next_cursor();
@@ -15,6 +17,16 @@ static void			next_cursor();
 void vga_init()
 {
 	vga_clear();
+}
+
+void vga_set_text_color(uint8_t color)
+{
+	text_color = color;
+}
+
+void vga_set_background_color(uint8_t color)
+{
+	background_color = color;
 }
 
 void vga_clear()
@@ -133,4 +145,5 @@ static void set_char(char c, int x, int y)
 {
 	vga_buffer[(y * VGA_WIDTH + x) * 2]		= c;
 	vga_buffer[(y * VGA_WIDTH + x) * 2 + 1] = 0x07;
+	vga_buffer[(y * VGA_WIDTH + x) * 2 + 1] = (background_color << 4) | (text_color & 0x0F);
 }
