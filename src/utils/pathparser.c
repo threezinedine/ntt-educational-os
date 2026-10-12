@@ -1,8 +1,23 @@
 #include "pathparser.h"
+#include "char_utils.h"
+#include "panic.h"
 #include "string.h"
 
 struct path from_c_string(const char* cstr)
 {
+	/**
+	 * Check if the cstring be valid or not, if not, do the panic
+	 */
+	if (cstr == NULL || strlen(cstr) == 0)
+	{
+		panic("Invalid path string");
+	}
+
+	if (cstr[0] != '/' && cstr[0] != '.' && !is_alpha(cstr[0]))
+	{
+		panic("Invalid path string: must start with '/' or '.' or an alphabetic character");
+	}
+
 	struct path p = {cstr, cstr};
 	return p;
 }

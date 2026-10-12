@@ -60,7 +60,7 @@ void kernel_main()
 		vga_print("\n");
 	}
 
-	panic("Reached end of main kernel loop");
+	struct path another_path = from_c_string("0/another/example/path");
 
 	for (;;)
 	{
