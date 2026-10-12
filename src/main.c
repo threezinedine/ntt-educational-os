@@ -35,6 +35,9 @@ void kernel_main()
 	uint8_t* buffer = kzalloc(1024);
 	disk_read(0, 1, 2, (uint32_t*)buffer);
 
+	vga_print_hex(*(uint32_t*)buffer);
+	vga_print("\n");
+
 	void* ptr  = kalloc(1024);
 	*(int*)ptr = 0x2A;
 	vga_print_hex(*(int*)ptr);

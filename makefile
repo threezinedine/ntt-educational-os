@@ -65,7 +65,7 @@ gdb: $(TARGET_BIN)
 	$(GDB) -ex "target remote :1234" -ex "set disassembly-flavor intel" -ex "set architecture i386" -ex "break *0x7C00" -ex "continue"
 
 gdb-c: $(TARGET_BIN)
-	$(GDB) -ex "target remote :1234" -ex "set disassembly-flavor intel" -ex "set architecture i386" -ex "add-symbol-file $(KERNEL_BIN_ELF) 0x500"
+	$(GDB) -ex "target remote :1234" -ex "set disassembly-flavor intel" -ex "set architecture i386" -ex "add-symbol-file $(KERNEL_BIN_ELF) 0x500" -ex "yes" -ex "layout src"
 
 
 show: $(TARGET_BIN)

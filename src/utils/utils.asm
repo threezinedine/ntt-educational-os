@@ -17,18 +17,22 @@ inb:
     movzx eax, al
     ret
 
-insw: ; (uint16_t port, uint32_t* buffer)
+insw: ; (uint16_t port, uint32_t* buffer, uint32_t count)
+    push edi
     cld
-    mov dx, [esp+4]
-    mov esi, [esp+8]
-    mov ecx, [esp+12]
-    rep insd
+    mov dx, [esp+8]
+    mov edi, [esp+12]
+    mov ecx, [esp+16]
+    rep insw
+    pop edi
     ret
 
-outsw: ; (uint16_t port, uint32_t* buffer)
+outsw: ; (uint16_t port, uint32_t* buffer, uint32_t count)
+    push edi
     cld
-    mov dx, [esp+4]
-    mov esi, [esp+8]
-    mov ecx, [esp+12]
-    rep outsd
+    mov dx, [esp+8]
+    mov edi, [esp+12]
+    mov ecx, [esp+16]
+    rep outsw
+    pop esi
     ret
