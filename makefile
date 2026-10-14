@@ -28,7 +28,7 @@ KERNEL_BIN     = $(BUILD_TEMP_DIR)/kernel.bin
 ASM_SRCS = $(wildcard src/**/*.asm src/*.asm)
 ASM_OBJS = $(ASM_SRCS:src/%.asm=$(BUILD_TEMP_DIR)/%.asm.o)
 
-GCC_SRCS = $(wildcard src/**/*.c src/*.c)
+GCC_SRCS = $(wildcard src/**/**/*.c src/**/*.c src/*.c)
 GCC_OBJS = $(GCC_SRCS:src/%.c=$(BUILD_TEMP_DIR)/%.c.o)
 
 $(TARGET_BIN): $(BOOT_SRC) $(KERNEL_BIN)

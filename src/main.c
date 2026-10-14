@@ -1,9 +1,11 @@
 #include "disk/disk.h"
+#include "filesystem/filesystem.h"
 #include "idt/idt.h"
 #include "keyboard/keyboard.h"
 #include "memory/memory.h"
 #include "paging/paging.h"
 #include "utils/utils.h"
+#include "vfs/vfs.h"
 #include "vga/vga.h"
 
 void kernel_main()
@@ -22,7 +24,6 @@ void kernel_main()
 
 	vga_print("Keyboard ready! Type something:\n");
 	kinit();
-
 	page_init();
 
 	page_directory_t default_page_directory = page_create_page_directory(128 * 1024 * 1024 /* 128 MB */, 1);
@@ -31,6 +32,10 @@ void kernel_main()
 
 	// page_directory_t test_page_directory = page_create_page_directory(128 * 1024 * 1024 /* 128 MB */, 0);
 	// page_destroy_page_directory(test_page_directory);
+
+	vfs_init();
+	struct file_system* pFs = fs_create();
+	vfs_register_file_system(pFs);
 
 	uint8_t* buffer = kzalloc(1024);
 	disk_read(0, 1, 2, (uint32_t*)buffer);
@@ -60,11 +65,20 @@ void kernel_main()
 		vga_print("\n");
 	}
 
-	struct path another_path = from_c_string("0/another/example/path");
+	struct file_description fd = vfs_open(p);
+
+	vga_print("File opened: ");
+	vga_print(fd.is_open ? "true" : "false");
+	vga_print("\n");
+
+	vfs_close(&fd);
 
 	for (;;)
 	{
 	}
 
+	vfs_unregister_file_system(pFs);
+	fs_destroy(pFs);
+	vfs_shutdown();
 	kshutdown();
 }
