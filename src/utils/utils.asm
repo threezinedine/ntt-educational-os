@@ -17,7 +17,7 @@ inb:
     movzx eax, al
     ret
 
-insw: ; (uint16_t port, uint32_t* buffer, uint32_t count)
+insw: ; (uint16_t port, uint16_t* buffer, uint32_t count)
     push edi
     cld
     mov dx, [esp+8]
@@ -27,7 +27,7 @@ insw: ; (uint16_t port, uint32_t* buffer, uint32_t count)
     pop edi
     ret
 
-outsw: ; (uint16_t port, uint32_t* buffer, uint32_t count)
+outsw: ; (uint16_t port, uint16_t* buffer, uint32_t count)
     push edi
     cld
     mov dx, [esp+8]

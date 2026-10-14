@@ -46,7 +46,7 @@ error_t disk_read(bool slave, uint32_t lba, uint32_t sectors, uint8_t* buffer)
 
 	for (uint32_t i = 0; i < sectors; i++)
 	{
-		insw(ATA_PORT + DATA, (uint32_t*)(buffer + i * 512), 128);
+		insw(ATA_PORT + DATA, (uint16_t*)(buffer + i * 512), 256);
 	}
 
 out:

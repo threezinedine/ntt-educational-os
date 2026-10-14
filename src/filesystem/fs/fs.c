@@ -5,8 +5,8 @@
 #include "vga/vga.h"
 
 #define MAGIC				0x33344333
-#define MAX_BLOCK_INDEX		100
-#define START_SEARCH_SECTOR 42
+#define MAX_BLOCK_INDEX		125
+#define START_SEARCH_SECTOR 1
 
 /**
  * 1 sector = 1 inode block
@@ -64,6 +64,22 @@ struct file_system* fs_create()
 	}
 
 	memcpy(&pInternal->setup, buffer, sizeof(struct setup_block));
+
+#if 1
+	vga_print("Filesystem setup loaded:\n");
+	vga_print("Magic: 0x");
+	vga_print_hex(pInternal->setup.magic);
+	vga_print("\n");
+	vga_print("Inode blocks count: ");
+	vga_print_dec(pInternal->setup.inode_blocks_counts);
+	vga_print("\n");
+	vga_print("Inode block size: ");
+	vga_print_dec(pInternal->setup.inode_block_size);
+	vga_print("\n");
+	vga_print("Inode meta block size: ");
+	vga_print_dec(pInternal->setup.inode_meta_block_size);
+	vga_print("\n");
+#endif
 
 	pSystem->pInternal = pInternal;
 	pSystem->resolve   = fs_resolve;

@@ -54,6 +54,7 @@ void kernel_main()
 	void* ptr  = kalloc(1024);
 	*(int*)ptr = 0x2A;
 	vga_print_hex(*(int*)ptr);
+	vga_print("\n");
 
 	vfs_init();
 	struct file_system* pFs = fs_create();
