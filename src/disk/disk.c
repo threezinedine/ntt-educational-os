@@ -22,7 +22,7 @@
 
 static void ata_io_wait(const uint16_t port);
 
-error_t disk_read(bool slave, uint32_t lba, uint32_t sectors, uint32_t* buffer)
+error_t disk_read(bool slave, uint32_t lba, uint32_t sectors, uint8_t* buffer)
 {
 	error_t result = OK;
 
@@ -46,18 +46,14 @@ error_t disk_read(bool slave, uint32_t lba, uint32_t sectors, uint32_t* buffer)
 
 	for (uint32_t i = 0; i < sectors; i++)
 	{
-#if 0
-		insw(ATA_PORT + DATA, buffer + i * 512, 512);
-#else
-		insw(ATA_PORT + DATA, (uint32_t*)((uint8_t*)buffer + i * 512), 128);
-#endif
+		insw(ATA_PORT + DATA, (uint32_t*)(buffer + i * 512), 128);
 	}
 
 out:
 	return result;
 }
 
-error_t disk_write(bool slave, uint32_t lba, uint32_t sectors, uint32_t* buffer)
+error_t disk_write(bool slave, uint32_t lba, uint32_t sectors, uint8_t* buffer)
 {
 	error_t result = OK;
 

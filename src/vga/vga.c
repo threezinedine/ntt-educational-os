@@ -115,6 +115,27 @@ void vga_print_hex(uint32_t value)
 	}
 }
 
+void vga_print_dec(uint32_t value)
+{
+	if (value == 0)
+	{
+		vga_putc('0');
+		return;
+	}
+
+	char buffer[10];
+	int	 i = 0;
+	while (value > 0)
+	{
+		buffer[i++] = '0' + (value % 10);
+		value /= 10;
+	}
+	for (int j = i - 1; j >= 0; j--)
+	{
+		vga_putc(buffer[j]);
+	}
+}
+
 static void set_pointer_position(int x, int y)
 {
 	cursor_x				= x;

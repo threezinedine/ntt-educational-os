@@ -31,12 +31,20 @@ ASM_OBJS = $(ASM_SRCS:src/%.asm=$(BUILD_TEMP_DIR)/%.asm.o)
 GCC_SRCS = $(wildcard src/**/**/*.c src/**/*.c src/*.c)
 GCC_OBJS = $(GCC_SRCS:src/%.c=$(BUILD_TEMP_DIR)/%.c.o)
 
-$(TARGET_BIN): $(BOOT_SRC) $(KERNEL_BIN)
+FILE_SYSTEM_FILE = assets/default_fs.asm
+FILE_SYSTEM_BIN  = $(BUILD_TEMP_DIR)/default_fs.bin
+
+$(TARGET_BIN): $(BOOT_SRC) $(KERNEL_BIN) $(FILE_SYSTEM_BIN)
 	$(NASM) -f bin $< -o $(BOOT_BIN)
 	dd if=/dev/zero bs=512 count=40 >> $(KERNEL_BIN)
 	truncate -s %512 $(KERNEL_BIN)
 	$(DINASM) $(NDISASM_FLAGS) $(KERNEL_BIN) > $(BUILD_DEBUG_DIR)/kernel.asm
-	cat $(BOOT_BIN) $(KERNEL_BIN) > $(TARGET_BIN)
+	cat $(BOOT_BIN) $(KERNEL_BIN) $(FILE_SYSTEM_BIN) > $(TARGET_BIN)
+
+$(FILE_SYSTEM_BIN): $(FILE_SYSTEM_FILE)
+	$(NASM) -f bin $< -o $@
+	dd if=/dev/zero bs=512 count=40 >> $(FILE_SYSTEM_BIN)
+	truncate -s %512 $(FILE_SYSTEM_BIN)
 
 $(KERNEL_BIN): $(ASM_OBJS) $(GCC_OBJS)
 	$(LD) -T linker.ld $^ -o $(KERNEL_BIN_ELF)

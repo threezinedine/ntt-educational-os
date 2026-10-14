@@ -1,9 +1,35 @@
 #include "fs.h"
+#include "disk/disk.h"
 #include "memory/memory.h"
 #include "utils/utils.h"
+#include "vga/vga.h"
+
+#define MAGIC				0x33344333
+#define MAX_BLOCK_INDEX		100
+#define START_SEARCH_SECTOR 42
+
+/**
+ * 1 sector = 1 inode block
+ *
+ * Sector 1: Magic
+ */
+
+// First 512 sector
+struct setup_block
+{
+	uint32_t magic;
+	uint32_t inode_blocks_counts;
+	uint32_t inode_block_size;
+	uint32_t inode_meta_block_size;
+};
+
+struct inode_entry
+{
+};
 
 struct fs_internal
 {
+	struct setup_block setup;
 };
 
 static bool	   fs_resolve(struct file_system* pSystem, struct path path);
@@ -14,6 +40,30 @@ struct file_system* fs_create()
 {
 	struct file_system* pSystem	  = (struct file_system*)kzalloc(sizeof(struct file_system));
 	struct fs_internal* pInternal = (struct fs_internal*)kzalloc(sizeof(struct fs_internal));
+
+	// searching match magic
+	uint32_t block_index = START_SEARCH_SECTOR;
+	uint8_t	 buffer[512];
+	while (true)
+	{
+		uint32_t magic;
+		memset(buffer, 0, sizeof(buffer));
+		disk_read(0, block_index, 1, buffer);
+		magic = *(uint32_t*)buffer;
+
+		if (magic == MAGIC)
+		{
+			break;
+		}
+		block_index++;
+
+		if (block_index > MAX_BLOCK_INDEX)
+		{
+			panic("Failed to load the filesystem");
+		}
+	}
+
+	memcpy(&pInternal->setup, buffer, sizeof(struct setup_block));
 
 	pSystem->pInternal = pInternal;
 	pSystem->resolve   = fs_resolve;

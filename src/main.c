@@ -33,12 +33,20 @@ void kernel_main()
 	// page_directory_t test_page_directory = page_create_page_directory(128 * 1024 * 1024 /* 128 MB */, 0);
 	// page_destroy_page_directory(test_page_directory);
 
-	vfs_init();
-	struct file_system* pFs = fs_create();
-	vfs_register_file_system(pFs);
-
 	uint8_t* buffer = kzalloc(1024);
-	disk_read(0, 1, 2, (uint32_t*)buffer);
+	disk_read(0, 87, 1, buffer);
+
+#if 0
+	for (int i = 0; i < 10; i++)
+	{
+		uint32_t value = (uint32_t)(buffer[i]);
+		vga_print("Buffer[");
+		vga_print_dec(i);
+		vga_print("] = ");
+		vga_print_hex(value);
+		vga_print("\n");
+	}
+#endif
 
 	vga_print_hex(*(uint32_t*)buffer);
 	vga_print("\n");
@@ -46,6 +54,10 @@ void kernel_main()
 	void* ptr  = kalloc(1024);
 	*(int*)ptr = 0x2A;
 	vga_print_hex(*(int*)ptr);
+
+	vfs_init();
+	struct file_system* pFs = fs_create();
+	vfs_register_file_system(pFs);
 
 	const char* example_path = "/home/user/docs";
 	struct path p			 = from_c_string(example_path);
