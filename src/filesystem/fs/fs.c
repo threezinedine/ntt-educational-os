@@ -14,6 +14,10 @@
 #define END_BLOCK	0xFF
 
 #define ITEM_NAME_LENGTH 64
+#define BLOCK_SIZE		 256
+
+#define INODE_ITEMS_ARRAY_SIZE ((BLOCK_SIZE - ITEM_NAME_LENGTH - 4) / 2)
+#define INODE_DATA_ARRAY_SIZE  (BLOCK_SIZE - ITEM_NAME_LENGTH - 4)
 
 /**
  * 1 sector = 1 inode block
@@ -36,6 +40,10 @@ struct inode_entry
 	uint8_t	 is_directory;
 	uint8_t	 has_next_inode;
 	uint16_t next_inode;
+	union {
+		uint16_t items[INODE_ITEMS_ARRAY_SIZE]; // 4 bytes for other fields in inode_entry
+		uint8_t	 data[INODE_DATA_ARRAY_SIZE];	// 4 bytes for other fields in inode_entry
+	};
 } __attribute__((packed));
 
 struct fs_internal
@@ -51,9 +59,15 @@ static error_t			   fs_open(struct file_system* pSystem, struct path path, struc
 static error_t			   fs_close(struct file_system* pSystem, struct file_description* pFile);
 static struct inode_entry* fs_get_inode(struct file_system* pSystem, uint16_t inode_index);
 static void				   fs_print_inode(struct inode_entry* pInode);
+static uint32_t			   fs_get_children_count(struct file_system* pSystem, struct inode_entry* pInode);
 
 struct file_system* fs_create()
 {
+	if (sizeof(struct inode_entry) != BLOCK_SIZE)
+	{
+		panic("Inode entry size does not match block size");
+	}
+
 	struct file_system* pSystem	  = (struct file_system*)kzalloc(sizeof(struct file_system));
 	struct fs_internal* pInternal = (struct fs_internal*)kzalloc(sizeof(struct fs_internal));
 
@@ -173,7 +187,14 @@ static struct inode_entry* fs_get_inode(struct file_system* pSystem, uint16_t in
 	memclear(buffer, 512);
 	disk_read(0, start_node_sector, 1, buffer);
 
-	memcpy(pInode, buffer, sizeof(struct inode_entry));
+	if (inode_index % 2 == 0)
+	{
+		memcpy(pInode, buffer, sizeof(struct inode_entry));
+	}
+	else
+	{
+		memcpy(pInode, buffer + 256, sizeof(struct inode_entry));
+	}
 
 	return pInode;
 }
@@ -197,5 +218,34 @@ static void fs_print_inode(struct inode_entry* pInode)
 	vga_print("    Name: ");
 	vga_print(pInode->name);
 	vga_print("\n");
+	vga_print("    Children count: ");
+	char	 buffer[12];
+	uint32_t children_count = fs_get_children_count(NULL, pInode);
+	vga_print_dec(children_count);
+	vga_print("\n");
 	vga_print("----------------------------\n");
+}
+
+static uint32_t fs_get_children_count(struct file_system* pSystem, struct inode_entry* pInode)
+{
+	if (pInode == NULL || !pInode->is_directory)
+	{
+		return 0;
+	}
+
+	for (uint32_t i = 0; i < INODE_ITEMS_ARRAY_SIZE; i++)
+	{
+		if (pInode->items[i] == 0)
+		{
+			return i;
+		}
+	}
+
+	if (pInode->has_next_inode == 0)
+	{
+		return INODE_ITEMS_ARRAY_SIZE;
+	}
+
+	// TODO: Handle the case where the directory has more than one inode.
+	return INODE_ITEMS_ARRAY_SIZE;
 }

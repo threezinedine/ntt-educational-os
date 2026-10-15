@@ -1,6 +1,6 @@
 dd 0x33344333
 dd 0x00000200 ; 512 node blocks
-dd 0x00000100 ; 256 bytes per node block
+dd 0x00000100 ; 256 bytes per node block; 1 sector has 2 blocks
 dd 0x00000001 ; 1 byte per inode meta data
 
 ; so that has totally 1 table sector

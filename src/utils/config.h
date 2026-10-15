@@ -23,4 +23,6 @@
 #define PAGE_TABLE_ENTRIES	   1024
 #define PAGE_SEGMENT_SIZE	   4096 // 4 KB per page segment
 
+#define SECTOR_SIZE 512
+
 #endif /* _CONFIG_H_ */
