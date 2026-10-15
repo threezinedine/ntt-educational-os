@@ -13,7 +13,6 @@ void kernel_main()
 	vga_init();
 
 	vga_print("Vga Initialized!\n");
-
 	vga_print("Setting the IDT...\n");
 	idt_init();
 
@@ -33,6 +32,7 @@ void kernel_main()
 	// page_directory_t test_page_directory = page_create_page_directory(128 * 1024 * 1024 /* 128 MB */, 0);
 	// page_destroy_page_directory(test_page_directory);
 
+#if 0
 	uint8_t* buffer		  = kzalloc(512);
 	uint32_t sector_index = 1;
 	uint32_t bytes_show	  = 5;
@@ -77,7 +77,64 @@ void kernel_main()
 	struct file_system* pFs = fs_create();
 	vfs_register_file_system(pFs);
 
-	fs_mkdir(pFs, from_c_string("/test"));
+	fs_mkdir(pFs, from_c_string("/hello/test"));
+
+	vga_print("------------------------\n");
+	vga_print("Root folder items count: ");
+	uint32_t root_items_count = fs_get_items_count(pFs, ROOT_FOLDER);
+	vga_print_dec(root_items_count);
+	vga_print("\n");
+
+	uint32_t tab_level = 1;
+	for (uint32_t i = 0; i < root_items_count; i++)
+	{
+		char name[64];
+		for (uint32_t j = 0; j < tab_level; ++j)
+		{
+			vga_print("\t");
+		}
+
+		fs_get_folder_name(pFs, fs_get_item(pFs, ROOT_FOLDER, i), name, sizeof(name));
+		vga_print("Item ");
+		vga_print_dec(i);
+		vga_print(": ");
+		vga_print(name);
+		if (fs_is_folder(pFs, fs_get_item(pFs, ROOT_FOLDER, i)))
+		{
+			vga_print(" (Folder)\n");
+			tab_level++;
+
+			fs_item	 sub_folder		 = fs_get_item(pFs, ROOT_FOLDER, i);
+			uint32_t sub_items_count = fs_get_items_count(pFs, sub_folder);
+
+			for (uint32_t j = 0; j < tab_level; ++j)
+			{
+				vga_print("\t");
+			}
+
+			vga_print("Sub-items count: ");
+			vga_print_dec(sub_items_count);
+			vga_print("\n");
+
+			for (uint32_t j = 0; j < sub_items_count; ++j)
+			{
+				for (uint32_t k = 0; k < tab_level; ++k)
+				{
+					vga_print("\t");
+				}
+				vga_print("Sub-item ");
+				vga_print_dec(j);
+				vga_print("\n");
+			}
+
+			tab_level--;
+		}
+		vga_print("\n");
+	}
+
+	vga_print("------------------------\n");
+
+	// fs_mkdir(pFs, from_c_string("/test"));
 
 #if 0
 	const char* example_path = "/home/user/docs";
@@ -106,14 +163,17 @@ void kernel_main()
 
 	vfs_close(&fd);
 #endif
+#endif
 
 loop:
 	for (;;)
 	{
 	}
 
+#if 0
 	vfs_unregister_file_system(pFs);
 	fs_destroy(pFs);
 	vfs_shutdown();
+#endif
 	kshutdown();
 }

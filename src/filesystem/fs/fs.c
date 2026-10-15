@@ -19,6 +19,8 @@
 #define INODE_ITEMS_ARRAY_SIZE ((BLOCK_SIZE - ITEM_NAME_LENGTH - 4) / 2)
 #define INODE_DATA_ARRAY_SIZE  (BLOCK_SIZE - ITEM_NAME_LENGTH - 4)
 
+fs_item ROOT_FOLDER = 0x0000;
+
 /**
  * 1 sector = 1 inode block
  *
@@ -51,6 +53,7 @@ struct fs_internal
 	uint32_t		   start_fs_start_fs_block_index;
 	uint32_t		   table_start_block_index;
 	uint32_t		   table_count;
+	uint32_t		   root_block_real_index;
 	struct setup_block setup;
 	uint32_t		   root_block;
 	uint8_t			   table_bitmap[BLOCK_SIZE];
@@ -62,7 +65,7 @@ static error_t			   fs_close(struct file_system* pSystem, struct file_descriptio
 static struct inode_entry* fs_get_inode(struct file_system* pSystem, uint16_t inode_index);
 static void				   fs_print_inode(struct inode_entry* pInode);
 static uint32_t			   fs_get_children_count(struct file_system* pSystem, struct inode_entry* pInode);
-static void fs_create_directory(struct file_system* pSystem, struct inode_entry* pParent, const char* name);
+static uint32_t			   fs_create_directory(struct file_system* pSystem, fs_item parent, const char* name);
 
 struct file_system* fs_create()
 {
@@ -109,6 +112,7 @@ struct file_system* fs_create()
 	pInternal->table_start_block_index		 = pInternal->start_fs_start_fs_block_index + 1;
 	pInternal->table_count					 = total_table_size / pInternal->setup.node_block_size;
 	pInternal->root_block					 = 0x0000;
+	pInternal->root_block_real_index		 = pInternal->root_block + pInternal->table_start_block_index + 1;
 
 	vga_print("############################\n");
 	vga_print("Filesystem setup loaded:\n");
@@ -137,7 +141,7 @@ struct file_system* fs_create()
 	// load table bit map
 	disk_read(0, pInternal->table_start_block_index, 1, pInternal->table_bitmap);
 
-#if 1
+#if 0
 	struct inode_entry* pRootInode = fs_get_inode(pSystem, 0);
 	fs_print_inode(pRootInode); // Print root directory
 	kfree(pRootInode);
@@ -268,6 +272,7 @@ void fs_mkdir(struct file_system* pSystem, struct path path)
 	struct fs_internal* pInternal	 = (struct fs_internal*)pSystem->pInternal;
 	struct inode_entry* pRoot		 = fs_get_inode(pSystem, pInternal->root_block);
 	struct inode_entry* pCurrentRoot = pRoot;
+	fs_item				current_item = 0;
 
 	char current[64];
 	while (path_next(&path))
@@ -291,6 +296,8 @@ void fs_mkdir(struct file_system* pSystem, struct path path)
 
 			if (strcmp(pChild->name, current) == 0)
 			{
+				// TODO: free inode later
+				current_item = pCurrentRoot->items[child_index];
 				pCurrentRoot = pChild;
 				found		 = 1;
 				break;
@@ -300,7 +307,10 @@ void fs_mkdir(struct file_system* pSystem, struct path path)
 
 		if (!found)
 		{
-			fs_create_directory(pSystem, pCurrentRoot, current);
+			uint32_t new_block_index = fs_create_directory(pSystem, current_item, current);
+			// TODO: free inode later
+			pCurrentRoot			 = fs_get_inode(pSystem, new_block_index);
+			current_item			 = new_block_index;
 		}
 	}
 }
@@ -313,22 +323,17 @@ static uint32_t fs_allocate_block(struct fs_internal* pInternal)
 		{
 			// Mark the index as used
 			pInternal->table_bitmap[i] = USED_BLOCK;
+			disk_write(0, pInternal->table_start_block_index, 1, pInternal->table_bitmap);
+			disk_read(0, pInternal->table_start_block_index, 1, pInternal->table_bitmap);
 			return i;
 		}
 	}
 
-	disk_write(0, pInternal->table_start_block_index, 1, pInternal->table_bitmap);
-
 	panic("Out of memory");
 }
 
-static void fs_create_directory(struct file_system* pSystem, struct inode_entry* pParent, const char* name)
+static uint32_t fs_create_directory(struct file_system* pSystem, fs_item pParent, const char* name)
 {
-	if (pParent == NULL)
-	{
-		panic("Parent inode is NULL");
-	}
-
 	if (name == NULL || strlen(name) == 0 || strlen(name) > ITEM_NAME_LENGTH)
 	{
 		panic("Invalid directory name");
@@ -344,15 +349,15 @@ static void fs_create_directory(struct file_system* pSystem, struct inode_entry*
 	memcpy(pNewDir->name, name, strlen(name) + 1);
 	pNewDir->has_next_inode = 0;
 
-	disk_write(0, block_index, 1, (void*)pNewDir);
+	disk_write(0, pInternal->root_block_real_index + block_index, 1, (void*)pNewDir);
 	kfree(pNewDir);
 
-	struct inode_entry* pRootInode = fs_get_inode(pSystem, 0);
+	struct inode_entry* pParentInode = fs_get_inode(pSystem, pParent);
 
 	uint16_t child_index = 0;
 	for (child_index = 0; child_index < INODE_ITEMS_ARRAY_SIZE; child_index++)
 	{
-		if (pRootInode->items[child_index] == 0)
+		if (pParentInode->items[child_index] == 0)
 		{
 			break;
 		}
@@ -361,11 +366,96 @@ static void fs_create_directory(struct file_system* pSystem, struct inode_entry*
 	{
 		panic("No free slot available in root inode");
 	}
-	pRootInode->items[child_index] = block_index;
-	disk_write(0, pInternal->root_block, 1, (void*)pRootInode);
+	pParentInode->items[child_index] = block_index;
+	disk_write(0, pInternal->root_block_real_index, 1, (void*)pParentInode);
+	kfree(pParentInode);
 
-#if 0
-	fs_print_inode(pRootInode); // Print root directory
-#endif
-	kfree(pRootInode);
+	return block_index;
+}
+
+void fs_get_folder_name(struct file_system* pSystem, uint32_t folder, char* name, uint32_t name_size)
+{
+	struct inode_entry* pFolder = fs_get_inode(pSystem, folder);
+	if (pFolder == NULL)
+	{
+		panic("Failed to get folder inode");
+	}
+
+	if (strlen(pFolder->name) + 1 > name_size)
+	{
+		panic("Name buffer is too small");
+	}
+	memcpy(name, pFolder->name, name_size);
+	kfree(pFolder);
+}
+
+void fs_get_file_name(struct file_system* pSystem, uint32_t file, char* name, uint32_t name_size)
+{
+	struct inode_entry* pFile = fs_get_inode(pSystem, file);
+	if (pFile == NULL)
+	{
+		panic("Failed to get file inode");
+	}
+
+	if (strlen(pFile->name) + 1 > name_size)
+	{
+		panic("Name buffer is too small");
+	}
+	memcpy(name, pFile->name, name_size);
+	kfree(pFile);
+}
+
+uint32_t fs_get_items_count(struct file_system* pSystem, uint32_t folder)
+{
+	struct inode_entry* pFolder = fs_get_inode(pSystem, folder);
+	if (pFolder == NULL)
+	{
+		panic("Failed to get folder inode");
+	}
+
+	uint32_t count = 0;
+	for (uint32_t i = 0; i < INODE_ITEMS_ARRAY_SIZE; i++)
+	{
+		if (pFolder->items[i] != 0)
+		{
+			count++;
+		}
+		else
+		{
+			break;
+		}
+	}
+	kfree(pFolder);
+	return count;
+}
+
+fs_item fs_get_item(struct file_system* pSystem, uint32_t folder, uint32_t index)
+{
+	struct inode_entry* pFolder = fs_get_inode(pSystem, folder);
+	if (pFolder == NULL)
+	{
+		panic("Failed to get folder inode");
+	}
+
+	if (index >= INODE_ITEMS_ARRAY_SIZE)
+	{
+		panic("Index out of bounds");
+	}
+
+	fs_item item = pFolder->items[index];
+	kfree(pFolder);
+	return item;
+}
+
+bool fs_is_folder(struct file_system* pSystem, fs_item item)
+{
+	struct inode_entry* pItem = fs_get_inode(pSystem, item);
+	if (pItem == NULL)
+	{
+		panic("Failed to get item inode");
+	}
+
+	bool is_folder = (pItem->is_directory);
+	kfree(pItem);
+	return is_folder;
 }

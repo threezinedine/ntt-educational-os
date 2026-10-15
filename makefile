@@ -43,7 +43,7 @@ $(TARGET_BIN): $(BOOT_SRC) $(KERNEL_BIN) $(FILE_SYSTEM_BIN)
 
 $(FILE_SYSTEM_BIN): $(FILE_SYSTEM_FILE)
 	$(NASM) -f bin $< -o $@
-	dd if=/dev/zero bs=512 count=40 >> $(FILE_SYSTEM_BIN)
+	dd if=/dev/zero bs=512 count=80 >> $(FILE_SYSTEM_BIN)
 	truncate -s %512 $(FILE_SYSTEM_BIN)
 
 $(KERNEL_BIN): $(ASM_OBJS) $(GCC_OBJS)

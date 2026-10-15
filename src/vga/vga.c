@@ -53,7 +53,6 @@ void vga_newline()
 	{
 		vga_scrollup();
 	}
-	cursor_y = VGA_HEIGHT - 2;
 	set_pointer_position(cursor_x, cursor_y);
 }
 
@@ -62,6 +61,13 @@ void vga_putc(char c)
 	if (c == '\n')
 	{
 		vga_newline();
+	}
+	else if (c == '\t')
+	{
+		vga_putc(' ');
+		vga_putc(' ');
+		vga_putc(' ');
+		vga_putc(' ');
 	}
 	else
 	{
@@ -156,11 +162,10 @@ static void next_cursor()
 		cursor_x = 0;
 		cursor_y++;
 
-		while (cursor_y > VGA_HEIGHT - 1)
+		while (cursor_y >= VGA_HEIGHT - 1)
 		{
 			vga_scrollup();
 		}
-		cursor_y = VGA_HEIGHT - 2;
 	}
 	set_pointer_position(cursor_x, cursor_y);
 }
