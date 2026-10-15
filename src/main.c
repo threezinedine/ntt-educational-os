@@ -86,6 +86,7 @@ void kernel_main()
 
 	vfs_close(&fd);
 
+loop:
 	for (;;)
 	{
 	}

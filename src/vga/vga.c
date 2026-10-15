@@ -49,10 +49,11 @@ void vga_newline()
 {
 	cursor_x = 0;
 	cursor_y++;
-	if (cursor_y >= VGA_HEIGHT)
+	while (cursor_y >= VGA_HEIGHT - 1)
 	{
-		cursor_y = 0;
+		vga_scrollup();
 	}
+	cursor_y = VGA_HEIGHT - 2;
 	set_pointer_position(cursor_x, cursor_y);
 }
 
@@ -154,10 +155,12 @@ static void next_cursor()
 	{
 		cursor_x = 0;
 		cursor_y++;
-		if (cursor_y >= VGA_HEIGHT)
+
+		while (cursor_y > VGA_HEIGHT - 1)
 		{
-			cursor_y = 0;
+			vga_scrollup();
 		}
+		cursor_y = VGA_HEIGHT - 2;
 	}
 	set_pointer_position(cursor_x, cursor_y);
 }
@@ -167,4 +170,20 @@ static void set_char(char c, int x, int y)
 	vga_buffer[(y * VGA_WIDTH + x) * 2]		= c;
 	vga_buffer[(y * VGA_WIDTH + x) * 2 + 1] = 0x07;
 	vga_buffer[(y * VGA_WIDTH + x) * 2 + 1] = (background_color << 4) | (text_color & 0x0F);
+}
+
+void vga_scrollup()
+{
+	for (uint32_t i = 0; i < VGA_HEIGHT - 1; i++)
+	{
+		memcpy(&vga_buffer[i * VGA_WIDTH * 2], &vga_buffer[(i + 1) * VGA_WIDTH * 2], VGA_WIDTH * 2);
+	}
+
+	// Clear the last line
+	for (uint32_t x = 0; x < VGA_WIDTH; x++)
+	{
+		set_char(' ', x, VGA_HEIGHT - 1);
+	}
+
+	cursor_y--;
 }

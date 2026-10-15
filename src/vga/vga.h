@@ -25,4 +25,6 @@ void vga_print(char* str);
 void vga_print_hex(uint32_t value);
 void vga_print_dec(uint32_t value);
 
+void vga_scrollup();
+
 #endif // _VGA_H_
