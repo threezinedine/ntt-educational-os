@@ -55,7 +55,7 @@ void kernel_main()
 	buffer[2] = 0xFF;
 	disk_write(0, sector_index, 1, buffer);
 	memclear(buffer, 512);
-	disk_read(0, 0, 1, buffer);
+	disk_read(0, sector_index, 1, buffer);
 
 	vga_print("----- Disk read buffer after modification -----\n");
 	for (int i = 0; i < bytes_show; i++)

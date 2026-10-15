@@ -71,6 +71,7 @@ void ata_write_sector(bool slave, uint32_t lba, const void* buffer)
 
 	// 4. Send 0x30 (WRITE SECTORS)
 	outb(ATA_PORT + COMMAND_REGISTER, WRITE_SECTORS_COMMAND);
+	ata_io_wait(ATA_PORT);
 
 	// 5. Wait until Drive is NOT busy (0x80) AND ready for Data (0x08)
 	while ((inb(ATA_PORT + STATUS_REGISTER) & 0x88) != 0x08);
@@ -78,8 +79,12 @@ void ata_write_sector(bool slave, uint32_t lba, const void* buffer)
 	// 6. Push 256 words (512 bytes)
 	outsw(ATA_PORT + DATA, buffer, 256);
 
+	ata_io_wait(ATA_PORT);
+	while (inb(ATA_PORT + STATUS_REGISTER) & 0x80);
+
 	// 7. Flush cache
 	outb(ATA_PORT + COMMAND_REGISTER, FLUSH_CACHE_COMMAND);
+	ata_io_wait(ATA_PORT);
 	while (inb(ATA_PORT + STATUS_REGISTER) & 0x80);
 }
 

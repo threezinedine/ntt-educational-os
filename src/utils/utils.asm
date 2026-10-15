@@ -28,10 +28,10 @@ insw: ; (uint16_t port, uint16_t* buffer, uint32_t count)
     ret
 
 outsw: ; (uint16_t port, uint16_t* buffer, uint32_t count)
-    push edi
+    push esi
     cld
     mov dx, [esp+8]
-    mov edi, [esp+12]
+    mov esi, [esp+12]
     mov ecx, [esp+16]
     rep outsw
     pop esi
