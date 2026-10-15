@@ -4,9 +4,9 @@
 #include "utils/utils.h"
 #include "vga/vga.h"
 
-#define MAGIC				0x33344333
-#define MAX_BLOCK_INDEX		125
-#define START_SEARCH_SECTOR 1
+#define MAGIC							  0x33344333
+#define MAX_start_fs_start_fs_block_index 125
+#define START_SEARCH_SECTOR				  1
 
 #define FREE_BLOCK	0x00
 #define START_BLOCK 0x01
@@ -14,7 +14,7 @@
 #define END_BLOCK	0xFF
 
 #define ITEM_NAME_LENGTH 64
-#define BLOCK_SIZE		 256
+#define BLOCK_SIZE		 512
 
 #define INODE_ITEMS_ARRAY_SIZE ((BLOCK_SIZE - ITEM_NAME_LENGTH - 4) / 2)
 #define INODE_DATA_ARRAY_SIZE  (BLOCK_SIZE - ITEM_NAME_LENGTH - 4)
@@ -48,10 +48,12 @@ struct inode_entry
 
 struct fs_internal
 {
-	uint32_t		   block_index;
+	uint32_t		   start_fs_start_fs_block_index;
+	uint32_t		   table_start_block_index;
 	uint32_t		   table_count;
 	struct setup_block setup;
 	uint32_t		   root_block;
+	uint8_t			   table_bitmap[BLOCK_SIZE];
 };
 
 static bool				   fs_resolve(struct file_system* pSystem, struct path path);
@@ -60,7 +62,7 @@ static error_t			   fs_close(struct file_system* pSystem, struct file_descriptio
 static struct inode_entry* fs_get_inode(struct file_system* pSystem, uint16_t inode_index);
 static void				   fs_print_inode(struct inode_entry* pInode);
 static uint32_t			   fs_get_children_count(struct file_system* pSystem, struct inode_entry* pInode);
-static void				   fs_create_directory(const char* name);
+static void fs_create_directory(struct file_system* pSystem, struct inode_entry* pParent, const char* name);
 
 struct file_system* fs_create()
 {
@@ -73,22 +75,22 @@ struct file_system* fs_create()
 	struct fs_internal* pInternal = (struct fs_internal*)kzalloc(sizeof(struct fs_internal));
 
 	// searching match magic
-	uint32_t block_index = START_SEARCH_SECTOR;
-	uint8_t	 buffer[512];
+	uint32_t start_fs_start_fs_block_index = START_SEARCH_SECTOR;
+	uint8_t	 buffer[BLOCK_SIZE];
 	while (true)
 	{
 		uint32_t magic;
 		memset(buffer, 0, sizeof(buffer));
-		disk_read(0, block_index, 1, buffer);
+		disk_read(0, start_fs_start_fs_block_index, 1, buffer);
 		magic = *(uint32_t*)buffer;
 
 		if (magic == MAGIC)
 		{
 			break;
 		}
-		block_index++;
+		start_fs_start_fs_block_index++;
 
-		if (block_index > MAX_BLOCK_INDEX)
+		if (start_fs_start_fs_block_index > MAX_start_fs_start_fs_block_index)
 		{
 			panic("Failed to load the filesystem");
 		}
@@ -103,9 +105,10 @@ struct file_system* fs_create()
 		panic("Invalid table size");
 	}
 
-	pInternal->block_index = block_index;
-	pInternal->table_count = total_table_size / pInternal->setup.node_block_size;
-	pInternal->root_block  = 0x0000;
+	pInternal->start_fs_start_fs_block_index = start_fs_start_fs_block_index;
+	pInternal->table_start_block_index		 = pInternal->start_fs_start_fs_block_index + 1;
+	pInternal->table_count					 = total_table_size / pInternal->setup.node_block_size;
+	pInternal->root_block					 = 0x0000;
 
 	vga_print("############################\n");
 	vga_print("Filesystem setup loaded:\n");
@@ -130,6 +133,9 @@ struct file_system* fs_create()
 	pSystem->resolve   = fs_resolve;
 	pSystem->open	   = fs_open;
 	pSystem->close	   = fs_close;
+
+	// load table bit map
+	disk_read(0, pInternal->table_start_block_index, 1, pInternal->table_bitmap);
 
 #if 1
 	struct inode_entry* pRootInode = fs_get_inode(pSystem, 0);
@@ -172,8 +178,8 @@ static struct inode_entry* fs_get_inode(struct file_system* pSystem, uint16_t in
 
 	struct fs_internal* pInternal = (struct fs_internal*)pSystem->pInternal;
 
-	// Table sector be next to the block_index
-	uint32_t table_sector	   = pInternal->block_index + 1;
+	// Table sector be next to the start_fs_start_fs_block_index
+	uint32_t table_sector	   = pInternal->table_start_block_index;
 	uint32_t start_node_sector = table_sector + 1 + inode_index;
 
 	// Read the table sector into a buffer
@@ -188,14 +194,7 @@ static struct inode_entry* fs_get_inode(struct file_system* pSystem, uint16_t in
 	memclear(buffer, 512);
 	disk_read(0, start_node_sector, 1, buffer);
 
-	if (inode_index % 2 == 0)
-	{
-		memcpy(pInode, buffer, sizeof(struct inode_entry));
-	}
-	else
-	{
-		memcpy(pInode, buffer + 256, sizeof(struct inode_entry));
-	}
+	memcpy(pInode, buffer, sizeof(struct inode_entry));
 
 	return pInode;
 }
@@ -275,6 +274,7 @@ void fs_mkdir(struct file_system* pSystem, struct path path)
 	{
 		uint8_t	 found		 = 0;
 		uint32_t child_index = 0;
+		path_get_current(&path, current);
 		for (child_index = 0; child_index < INODE_ITEMS_ARRAY_SIZE; child_index++)
 		{
 			if (pCurrentRoot->items[child_index] == 0)
@@ -289,7 +289,6 @@ void fs_mkdir(struct file_system* pSystem, struct path path)
 				panic("Failed to get child inode");
 			}
 
-			path_get_current(&path, current);
 			if (strcmp(pChild->name, current) == 0)
 			{
 				pCurrentRoot = pChild;
@@ -301,14 +300,72 @@ void fs_mkdir(struct file_system* pSystem, struct path path)
 
 		if (!found)
 		{
+			fs_create_directory(pSystem, pCurrentRoot, current);
 		}
 	}
 }
 
-static void fs_create_directory(const char* name)
+static uint32_t fs_allocate_block(struct fs_internal* pInternal)
 {
+	for (uint32_t i = 0; i < pInternal->setup.node_blocks_counts; ++i)
+	{
+		if (pInternal->table_bitmap[i] == FREE_BLOCK)
+		{
+			// Mark the index as used
+			pInternal->table_bitmap[i] = USED_BLOCK;
+			return i;
+		}
+	}
+
+	disk_write(0, pInternal->table_start_block_index, 1, pInternal->table_bitmap);
+
+	panic("Out of memory");
+}
+
+static void fs_create_directory(struct file_system* pSystem, struct inode_entry* pParent, const char* name)
+{
+	if (pParent == NULL)
+	{
+		panic("Parent inode is NULL");
+	}
+
 	if (name == NULL || strlen(name) == 0 || strlen(name) > ITEM_NAME_LENGTH)
 	{
 		panic("Invalid directory name");
 	}
+
+	struct fs_internal* pInternal = (struct fs_internal*)pSystem->pInternal;
+
+	// Find the first unused index
+	uint32_t block_index = fs_allocate_block(pInternal);
+
+	struct inode_entry* pNewDir = fs_get_inode(pSystem, block_index);
+	pNewDir->is_directory		= 1;
+	memcpy(pNewDir->name, name, strlen(name) + 1);
+	pNewDir->has_next_inode = 0;
+
+	disk_write(0, block_index, 1, (void*)pNewDir);
+	kfree(pNewDir);
+
+	struct inode_entry* pRootInode = fs_get_inode(pSystem, 0);
+
+	uint16_t child_index = 0;
+	for (child_index = 0; child_index < INODE_ITEMS_ARRAY_SIZE; child_index++)
+	{
+		if (pRootInode->items[child_index] == 0)
+		{
+			break;
+		}
+	}
+	if (child_index == INODE_ITEMS_ARRAY_SIZE)
+	{
+		panic("No free slot available in root inode");
+	}
+	pRootInode->items[child_index] = block_index;
+	disk_write(0, pInternal->root_block, 1, (void*)pRootInode);
+
+#if 0
+	fs_print_inode(pRootInode); // Print root directory
+#endif
+	kfree(pRootInode);
 }

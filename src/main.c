@@ -68,8 +68,6 @@ void kernel_main()
 	}
 	vga_print("----- End of disk read buffer after modification -----\n");
 
-	goto loop;
-
 	void* ptr  = kalloc(1024);
 	*(int*)ptr = 0x2A;
 	vga_print_hex(*(int*)ptr);
@@ -79,6 +77,9 @@ void kernel_main()
 	struct file_system* pFs = fs_create();
 	vfs_register_file_system(pFs);
 
+	fs_mkdir(pFs, from_c_string("/test"));
+
+#if 0
 	const char* example_path = "/home/user/docs";
 	struct path p			 = from_c_string(example_path);
 
@@ -104,6 +105,7 @@ void kernel_main()
 	vga_print("\n");
 
 	vfs_close(&fd);
+#endif
 
 loop:
 	for (;;)
