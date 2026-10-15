@@ -33,23 +33,42 @@ void kernel_main()
 	// page_directory_t test_page_directory = page_create_page_directory(128 * 1024 * 1024 /* 128 MB */, 0);
 	// page_destroy_page_directory(test_page_directory);
 
-	uint8_t* buffer = kzalloc(1024);
-	disk_read(0, 87, 1, buffer);
+	uint8_t* buffer		  = kzalloc(512);
+	uint32_t sector_index = 1;
+	uint32_t bytes_show	  = 5;
+	disk_read(0, sector_index, 1, buffer);
 
-#if 0
-	for (int i = 0; i < 10; i++)
+	vga_print("----- Disk read buffer -----\n");
+	for (int i = 0; i < bytes_show; i++)
 	{
-		uint32_t value = (uint32_t)(buffer[i]);
-		vga_print("Buffer[");
+		vga_print("[");
 		vga_print_dec(i);
-		vga_print("] = ");
-		vga_print_hex(value);
+		vga_print("] ");
+		vga_print_hex(buffer[i]);
 		vga_print("\n");
 	}
-#endif
 
-	vga_print_hex(*(uint32_t*)buffer);
-	vga_print("\n");
+	vga_print("----- End of disk read buffer -----\n");
+
+	vga_print("\nModify first byte and 3rd byte in the sector\n");
+	buffer[0] = 0xFF;
+	buffer[2] = 0xFF;
+	disk_write(0, sector_index, 1, buffer);
+	memclear(buffer, 512);
+	disk_read(0, 0, 1, buffer);
+
+	vga_print("----- Disk read buffer after modification -----\n");
+	for (int i = 0; i < bytes_show; i++)
+	{
+		vga_print("[");
+		vga_print_dec(i);
+		vga_print("] ");
+		vga_print_hex(buffer[i]);
+		vga_print("\n");
+	}
+	vga_print("----- End of disk read buffer after modification -----\n");
+
+	goto loop;
 
 	void* ptr  = kalloc(1024);
 	*(int*)ptr = 0x2A;

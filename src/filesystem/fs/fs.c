@@ -60,6 +60,7 @@ static error_t			   fs_close(struct file_system* pSystem, struct file_descriptio
 static struct inode_entry* fs_get_inode(struct file_system* pSystem, uint16_t inode_index);
 static void				   fs_print_inode(struct inode_entry* pInode);
 static uint32_t			   fs_get_children_count(struct file_system* pSystem, struct inode_entry* pInode);
+static void				   fs_create_directory(const char* name);
 
 struct file_system* fs_create()
 {
@@ -248,4 +249,66 @@ static uint32_t fs_get_children_count(struct file_system* pSystem, struct inode_
 
 	// TODO: Handle the case where the directory has more than one inode.
 	return INODE_ITEMS_ARRAY_SIZE;
+}
+
+void fs_mkdir(struct file_system* pSystem, struct path path)
+{
+	if (pSystem == NULL)
+	{
+		panic("File system is NULL");
+	}
+
+	char root[64];
+	path_get_root(&path, root);
+
+	if (strcmp(root, "/") != 0)
+	{
+		panic("Cannot create directory at root");
+	}
+
+	struct fs_internal* pInternal	 = (struct fs_internal*)pSystem->pInternal;
+	struct inode_entry* pRoot		 = fs_get_inode(pSystem, pInternal->root_block);
+	struct inode_entry* pCurrentRoot = pRoot;
+
+	char current[64];
+	while (path_next(&path))
+	{
+		uint8_t	 found		 = 0;
+		uint32_t child_index = 0;
+		for (child_index = 0; child_index < INODE_ITEMS_ARRAY_SIZE; child_index++)
+		{
+			if (pCurrentRoot->items[child_index] == 0)
+			{
+				break;
+			}
+
+			struct inode_entry* pChild = fs_get_inode(pSystem, pCurrentRoot->items[child_index]);
+
+			if (pChild == NULL)
+			{
+				panic("Failed to get child inode");
+			}
+
+			path_get_current(&path, current);
+			if (strcmp(pChild->name, current) == 0)
+			{
+				pCurrentRoot = pChild;
+				found		 = 1;
+				break;
+			}
+		}
+		// Create the directory for the current path component
+
+		if (!found)
+		{
+		}
+	}
+}
+
+static void fs_create_directory(const char* name)
+{
+	if (name == NULL || strlen(name) == 0 || strlen(name) > ITEM_NAME_LENGTH)
+	{
+		panic("Invalid directory name");
+	}
 }

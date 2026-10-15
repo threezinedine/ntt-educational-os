@@ -18,7 +18,9 @@
 
 #define ATA_PORT 0x1F0
 
-#define READ_SECTORS_COMMAND 0x20
+#define READ_SECTORS_COMMAND  0x20
+#define WRITE_SECTORS_COMMAND 0x30
+#define FLUSH_CACHE_COMMAND	  0xE7
 
 static void ata_io_wait(const uint16_t port);
 
@@ -53,6 +55,34 @@ out:
 	return result;
 }
 
+void ata_write_sector(bool slave, uint32_t lba, const void* buffer)
+{
+	// 1. Wait if controller is busy
+	while (inb(ATA_PORT + STATUS_REGISTER) & 0x80);
+
+	// 2. Select Master Drive + top 4 bits of LBA
+	outb(ATA_PORT + DRIVE_SELECT, 0xE0 | (slave << 4) | ((lba >> 24) & 0x0F));
+
+	// 3. Write 1 sector count and LBA address bytes
+	outb(ATA_PORT + SECTOR_COUNT, 1);
+	outb(ATA_PORT + LBA_LOW, (uint8_t)(lba));
+	outb(ATA_PORT + LBA_MID, (uint8_t)(lba >> 8));
+	outb(ATA_PORT + LBA_HIGH, (uint8_t)(lba >> 16));
+
+	// 4. Send 0x30 (WRITE SECTORS)
+	outb(ATA_PORT + COMMAND_REGISTER, WRITE_SECTORS_COMMAND);
+
+	// 5. Wait until Drive is NOT busy (0x80) AND ready for Data (0x08)
+	while ((inb(ATA_PORT + STATUS_REGISTER) & 0x88) != 0x08);
+
+	// 6. Push 256 words (512 bytes)
+	outsw(ATA_PORT + DATA, buffer, 256);
+
+	// 7. Flush cache
+	outb(ATA_PORT + COMMAND_REGISTER, FLUSH_CACHE_COMMAND);
+	while (inb(ATA_PORT + STATUS_REGISTER) & 0x80);
+}
+
 error_t disk_write(bool slave, uint32_t lba, uint32_t sectors, uint8_t* buffer)
 {
 	error_t result = OK;
@@ -61,6 +91,11 @@ error_t disk_write(bool slave, uint32_t lba, uint32_t sectors, uint8_t* buffer)
 	{
 		result = ERROR_NULL_POINTER;
 		goto out;
+	}
+
+	for (uint32_t i = 0; i < sectors; i++)
+	{
+		ata_write_sector(slave, lba + i, buffer + i * 512);
 	}
 
 out:
