@@ -26,22 +26,21 @@ struct task* task_create(const char* exe)
 	pTask->code_start		 = 4 + strlen(exe) + 3;
 	pTask->loaded			 = 0;
 
-	uint8_t	 buffer[512];
-	uint32_t sector_index = 0;
-	while (sector_index < 100)
+	uint8_t buffer[512];
+	while (pTask->code_sector_index < 100)
 	{
 		memclear(buffer, 512);
-		disk_read(0, sector_index, 1, buffer);
+		disk_read(0, pTask->code_sector_index, 1, buffer);
 
 		if (strncmp((const char*)buffer, "bin.", 4) != 0)
 		{
-			sector_index++;
+			pTask->code_sector_index++;
 			continue;
 		}
 
 		if (strncmp((const char*)(buffer + 4), exe, strlen(exe)) != 0)
 		{
-			sector_index++;
+			pTask->code_sector_index++;
 			continue;
 		}
 
