@@ -6,5 +6,6 @@
         "editor.defaultFormatter": "xaver.clang-format"
     },
     "editor.formatOnSave": true,
-    "editor.lineNumbers": "relative"
+    "editor.lineNumbers": "relative",
+    "editor.wordWrap": "on"
 }

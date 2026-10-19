@@ -60,6 +60,8 @@ error_t gdt_setup()
 
 	memset(entries, 0, sizeof(entries));
 
+	// The first entry is the null descriptor, which is required by the x86 architecture.
+
 	gdt_set_gate(1,
 				 0,
 				 0xFFFFFFFF,

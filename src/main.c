@@ -8,6 +8,9 @@
 #include "vfs/vfs.h"
 #include "vga/vga.h"
 
+#define SIZE_128_MB (128 * 1024 * 1024)
+#define SIZE_64_MB	(64 * 1024 * 1024)
+
 #include "gdt/gdt.h"
 void kernel_main()
 {
@@ -28,12 +31,21 @@ void kernel_main()
 	kinit();
 	page_init();
 
-	page_directory_t default_page_directory = page_create_page_directory(128 * 1024 * 1024 /* 128 MB */, 1);
+	page_directory_t default_page_directory = page_create_page_directory(SIZE_128_MB, 1);
 	page_switch_page_directory(default_page_directory);
 	page_enable_paging();
 
-	// page_directory_t test_page_directory = page_create_page_directory(128 * 1024 * 1024 /* 128 MB */, 0);
-	// page_destroy_page_directory(test_page_directory);
+	uint32_t* address = (uint32_t*)0x7000000;
+	*address		  = 0xDEADBEEF;
+
+	uint32_t* address2 = (uint32_t*)0x3000000;
+	*address2		   = 0xDEADBEEF;
+
+	page_directory_t test_task_page = page_create_page_directory_with_share(0x0, SIZE_64_MB, SIZE_64_MB);
+	page_switch_page_directory(test_task_page);
+
+	// uint32_t* address = (uint32_t*)0x9000000;
+	// *address		  = 0xDEADBEEF;
 
 #if 0
 	uint8_t* buffer		  = kzalloc(512);
