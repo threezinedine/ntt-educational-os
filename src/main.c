@@ -8,8 +8,11 @@
 #include "vfs/vfs.h"
 #include "vga/vga.h"
 
+#include "gdt/gdt.h"
 void kernel_main()
 {
+	gdt_setup();
+
 	vga_init();
 
 	vga_print("Vga Initialized!\n");
