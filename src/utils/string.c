@@ -45,6 +45,22 @@ int8_t strcmp(const char* str1, const char* str2)
 	return 1;
 }
 
+int8_t strncmp(const char* str1, const char* str2, uint32_t num)
+{
+	uint32_t i = 0;
+	if (strlen(str1) < num) return -1;
+	if (strlen(str2) < num) return 1;
+
+	while (str1[i] != '\0' && str2[i] != '\0')
+	{
+		if (str1[i] > str2[i]) return 1;
+		if (str1[i] < str2[i]) return -1;
+		i++;
+	}
+
+	return 0;
+}
+
 int32_t index_of(const char* str, char c)
 {
 	int32_t i = 0;

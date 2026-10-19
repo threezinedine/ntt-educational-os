@@ -4,6 +4,7 @@
 #include "keyboard/keyboard.h"
 #include "memory/memory.h"
 #include "paging/paging.h"
+#include "tasks/tasks.h"
 #include "utils/utils.h"
 #include "vfs/vfs.h"
 #include "vga/vga.h"
@@ -35,17 +36,8 @@ void kernel_main()
 	page_switch_page_directory(default_page_directory);
 	page_enable_paging();
 
-	uint32_t* address = (uint32_t*)0x7000000;
-	*address		  = 0xDEADBEEF;
-
-	uint32_t* address2 = (uint32_t*)0x3000000;
-	*address2		   = 0xDEADBEEF;
-
-	page_directory_t test_task_page = page_create_page_directory_with_share(0x0, SIZE_64_MB, SIZE_64_MB);
-	page_switch_page_directory(test_task_page);
-
-	// uint32_t* address = (uint32_t*)0x9000000;
-	// *address		  = 0xDEADBEEF;
+	struct task* pTask = task_create("hello");
+	task_run(pTask);
 
 #if 0
 	uint8_t* buffer		  = kzalloc(512);

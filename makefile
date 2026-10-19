@@ -31,19 +31,22 @@ ASM_OBJS = $(ASM_SRCS:src/%.asm=$(BUILD_TEMP_DIR)/%.asm.o)
 GCC_SRCS = $(wildcard src/**/**/*.c src/**/*.c src/*.c)
 GCC_OBJS = $(GCC_SRCS:src/%.c=$(BUILD_TEMP_DIR)/%.c.o)
 
-FILE_SYSTEM_FILE = assets/default_fs.asm
+FILE_SYSTEM_FILE = assets/fs/default_fs.asm
 FILE_SYSTEM_BIN  = $(BUILD_TEMP_DIR)/default_fs.bin
 
-$(TARGET_BIN): $(BOOT_SRC) $(KERNEL_BIN) $(FILE_SYSTEM_BIN)
+EXECUTABLES_FILES = $(wildcard assets/executables/*.asm)
+EXECUTABLES_BINS  = $(EXECUTABLES_FILES:assets/executables/%.asm=$(BUILD_TEMP_DIR)/executables/%.bin)
+
+$(TARGET_BIN): $(BOOT_SRC) $(KERNEL_BIN) $(FILE_SYSTEM_BIN) $(EXECUTABLES_BINS)
 	$(NASM) -f bin $< -o $(BOOT_BIN)
-	dd if=/dev/zero bs=512 count=40 >> $(KERNEL_BIN)
+# 	dd if=/dev/zero bs=512 count=40 >> $(KERNEL_BIN)
 	truncate -s %512 $(KERNEL_BIN)
 	$(DINASM) $(NDISASM_FLAGS) $(KERNEL_BIN) > $(BUILD_DEBUG_DIR)/kernel.asm
-	cat $(BOOT_BIN) $(KERNEL_BIN) $(FILE_SYSTEM_BIN) > $(TARGET_BIN)
+	cat $(BOOT_BIN) $(KERNEL_BIN) $(EXECUTABLES_BINS) > $(TARGET_BIN)
 
 $(FILE_SYSTEM_BIN): $(FILE_SYSTEM_FILE)
 	$(NASM) -f bin $< -o $@
-	dd if=/dev/zero bs=512 count=80 >> $(FILE_SYSTEM_BIN)
+# 	dd if=/dev/zero bs=512 count=80 >> $(FILE_SYSTEM_BIN)
 	truncate -s %512 $(FILE_SYSTEM_BIN)
 
 $(KERNEL_BIN): $(ASM_OBJS) $(GCC_OBJS)
@@ -58,10 +61,16 @@ $(BUILD_TEMP_DIR)/%.c.o: src/%.c setup
 	@mkdir -p $(dir $@)
 	$(GCC) $(GCC_FLAGS) -c $< -o $@
 
+$(BUILD_TEMP_DIR)/executables/%.bin: assets/executables/%.asm setup
+	@mkdir -p $(dir $@)
+	$(NASM) -f bin $< -o $@
+	truncate -s %512 $@
+
 setup:
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(BUILD_TEMP_DIR)
 	mkdir -p $(BUILD_DEBUG_DIR)
+	mkdir -p $(BUILD_TEMP_DIR)/executables
 
 qemu: $(TARGET_BIN)
 	$(QEMU) -drive file=$(TARGET_BIN),format=raw,index=0,media=disk

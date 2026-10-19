@@ -19,6 +19,14 @@ struct task
 	uint32_t		 kernel_stack_top;
 	page_directory_t page_directory; // has the memory setup here
 	struct task*	 pNext;
+	uint32_t		 code_sector_index;
+	uint32_t		 code_sector_count;
+	uint32_t		 code_start;
+	bool			 loaded;
 };
+
+struct task* task_create(const char* exe);
+error_t		 task_run(struct task* pTask);
+void		 task_destroy(struct task* pTask);
 
 #endif /* _TASKS_H_ */
