@@ -25,7 +25,7 @@ struct task* task_create(const char* exe)
 	pTask->state			= TASK_STATE_WAITING;
 	pTask->kernel_stack_top = (uint32_t)kzalloc(KERNEL_STACK_SIZE) + KERNEL_STACK_SIZE;
 	pTask->kernel_esp		= pTask->kernel_stack_top;
-	pTask->page_directory	= page_create_page_directory_with_share(0x0, SIZE_128_MB, SIZE_64_MB);
+	pTask->page_directory	= page_create_page_directory_with_share(0x0, SIZE_64_MB, SIZE_64_MB);
 	pTask->pNext			= NULL;
 
 	// Find the executable in the memory

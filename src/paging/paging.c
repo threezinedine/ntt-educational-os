@@ -6,11 +6,11 @@
 #define SIZE_4GB			 (4 * 1024 * 1024 * 1024)
 #define PHYSICAL_PAGES_COUNT (SIZE_4GB / PAGE_SEGMENT_SIZE) // Example value, adjust as needed
 
-#define PRESENT_PAGE		 (1)
-#define WRITABLE_PAGE		 (1 >> 2)
-#define USER_ACCESSIBLE_PAGE (1 >> 3)
-#define WRITETHROUGH_PAGE	 (1 >> 4)
-#define CACHE_DISABLE_PAGE	 (1 >> 5)
+#define PRESENT_PAGE		 (1 << 0)
+#define WRITABLE_PAGE		 (1 << 1)
+#define USER_ACCESSIBLE_PAGE (1 << 2)
+#define WRITETHROUGH_PAGE	 (1 << 3)
+#define CACHE_DISABLE_PAGE	 (1 << 4)
 
 error_t page_init()
 {
@@ -133,7 +133,7 @@ page_directory_t page_create_page_directory_with_share(uint32_t kernel_start, ui
 
 		if (size_counter < kernel_size + user_size)
 		{
-			*current_page_directory_entry_ptr |= PRESENT_PAGE;
+			*current_page_directory_entry_ptr |= PRESENT_PAGE | WRITABLE_PAGE | USER_ACCESSIBLE_PAGE;
 		}
 
 		for (uint32_t j = 0; j < PAGE_TABLE_ENTRIES; j++)
@@ -143,10 +143,15 @@ page_directory_t page_create_page_directory_with_share(uint32_t kernel_start, ui
 														 ? kernel_start + (i * PAGE_TABLE_ENTRIES + j) * PAGE_SEGMENT_SIZE
 														 : (uint32_t)pmm_get_free_segment();
 
-			*current_page_table_entry_ptr = page_address;
+			*current_page_table_entry_ptr = page_address | WRITABLE_PAGE;
 
 			if (size_counter < kernel_size + user_size)
 			{
+				if (size_counter >= kernel_size)
+				{
+					*current_page_table_entry_ptr |= USER_ACCESSIBLE_PAGE;
+				}
+
 				*current_page_table_entry_ptr |= PRESENT_PAGE;
 			}
 
