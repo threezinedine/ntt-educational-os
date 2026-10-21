@@ -26,6 +26,7 @@
 
 error_t		gdt_setup();
 error_t		gdt_set_gate(uint32_t index, uint32_t base, uint32_t limit, uint8_t access, uint8_t flags);
+void		set_tss_esp0(uint32_t esp0);
 extern void tss_flush();
 
 #endif /* _GDT_H_ */

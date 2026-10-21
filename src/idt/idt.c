@@ -163,6 +163,9 @@ static error_t idt_setup(uint8_t	   interrupt_number,
 
 void idt_dispatcher(uint32_t interrupt_number)
 {
+	vga_print("\nInterrupt: ");
+	vga_print_dec(interrupt_number);
+	vga_print("\n");
 	if (idt_handlers[interrupt_number])
 	{
 		idt_handlers[interrupt_number]();

@@ -1,6 +1,7 @@
 #include "gdt.h"
 
 extern void gdt_flush(uint32_t gdt);
+extern void load_tss(uint32_t tss_segment);
 
 struct gdt_entry
 {
@@ -53,6 +54,8 @@ static struct gdt_entry entries[6] = {};
 static struct gdt_table table	   = {};
 static struct tss_entry tss		   = {};
 
+static void tss_init();
+
 error_t gdt_setup()
 {
 	table.limit = sizeof(entries) - 1;
@@ -87,6 +90,7 @@ error_t gdt_setup()
 	gdt_set_gate(5, (uint32_t)&tss, sizeof(tss) - 1, GDT_PRESENT | GDT_DPL_RING0 | GDT_TSS_SEGMENT | GDT_DISABLED, 0);
 
 	gdt_flush((uint32_t)&table);
+	tss_init();
 
 	return OK;
 }
@@ -110,4 +114,18 @@ error_t gdt_set_gate(uint32_t index, uint32_t base, uint32_t limit, uint8_t acce
 
 out:
 	return result;
+}
+
+static void tss_init()
+{
+	memset(&tss, 0, sizeof(tss));
+	tss.ss0		   = KERNEL_DATA_SEGMENT;
+	tss.esp0	   = 0x0; // Set this to the top of the kernel stack
+	tss.iomap_base = sizeof(tss);
+	load_tss(TSS_SEGMENT);
+}
+
+void set_tss_esp0(uint32_t esp0)
+{
+	tss.esp0 = esp0;
 }
