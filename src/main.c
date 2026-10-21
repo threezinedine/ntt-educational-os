@@ -36,8 +36,7 @@ void kernel_main()
 	page_switch_page_directory(default_page_directory);
 	page_enable_paging();
 
-	// struct task* pTask = task_create("hello");
-	struct task* pTask = task_create("counting");
+	struct task* pTask = task_create("hello");
 	task_run(pTask);
 
 #if 0

@@ -42,7 +42,7 @@ end_loop:
     jmp $
 
 message:
-    db 10, 'Current value: ', 0
+    db 10, 'Current value from counting: ', 0
 
 finish_message:
     db 10, 'Done!', 0
