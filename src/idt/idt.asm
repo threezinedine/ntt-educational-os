@@ -2,16 +2,71 @@ section .text
 
 extern idt_dispatcher
 extern vga_print
+extern vga_print_dec
+extern task_create
+extern task_run
 
 global load_idt
 global idt_int80h_handler
 
 api_tables:
     dd _vga_print
+    dd _vga_print_dec
+    dd _delay_1s_asm
+    dd _task_execute
+
+_delay_1s_asm:
+    push ebx
+    push ecx
+    mov ecx, 20               ; Run 20 sub-intervals
+
+.interval_loop:
+    ; Configure PIT Channel 2: Mode 0, LSB then MSB
+    mov al, 0xB0
+    out 0x43, al
+
+    ; Load 59,659 (50 ms per chunk)
+    mov al, 0x0B
+    out 0x42, al
+    mov al, 0xE9
+    out 0x42, al
+
+    ; Enable Gate 2 (bit 0 of port 0x61 = 1)
+    in al, 0x61
+    or al, 0x01
+    and al, 0xFD              ; Ensure speaker bit 1 is off
+    out 0x61, al
+
+.wait_countdown:
+    in al, 0x61
+    test al, 0x20             ; Check bit 5 (OUT2 flag)
+    jz .wait_countdown
+
+    loop .interval_loop
+
+    pop ecx
+    pop ebx
+    ret
+    
 
 _vga_print:
     push ebx
     call vga_print
+    add esp, 4
+    ret
+
+_vga_print_dec:
+    push ebx
+    call vga_print_dec
+    add esp, 4
+    ret
+
+_task_execute:
+    push ebx 
+    call task_create
+    add esp, 4
+    push eax
+    call task_run
     add esp, 4
     ret
 
