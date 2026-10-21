@@ -1,5 +1,6 @@
 #include "disk/disk.h"
 #include "filesystem/filesystem.h"
+#include "gdt/gdt.h"
 #include "idt/idt.h"
 #include "keyboard/keyboard.h"
 #include "memory/memory.h"
@@ -12,7 +13,6 @@
 #define SIZE_128_MB (128 * 1024 * 1024)
 #define SIZE_64_MB	(64 * 1024 * 1024)
 
-#include "gdt/gdt.h"
 void kernel_main()
 {
 	gdt_setup();
@@ -183,4 +183,9 @@ loop:
 	vfs_shutdown();
 #endif
 	kshutdown();
+}
+
+static void int_80_handler()
+{
+	vga_print("Interrupt 80h called\n");
 }

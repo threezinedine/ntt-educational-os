@@ -67,6 +67,11 @@ static void idt_default_handler(void)
 	vga_print("Unhandled interrupt\n");
 }
 
+static void idt_int80h_handler(void)
+{
+	vga_print("Interrupt 80h called\n");
+}
+
 error_t idt_init(void)
 {
 	error_t err = OK;
@@ -86,6 +91,13 @@ error_t idt_init(void)
 		{
 			goto out;
 		}
+	}
+
+	err = idt_setup((uint8_t)0x80, INTERRUPT_GATE_32, PRIVILEGE_RING_0, KERNEL_CODE_SEGMENT, idt_int80h_handler);
+
+	if (err != OK)
+	{
+		goto out;
 	}
 
 	load_idt(&idt_descriptor);
@@ -163,9 +175,6 @@ static error_t idt_setup(uint8_t	   interrupt_number,
 
 void idt_dispatcher(uint32_t interrupt_number)
 {
-	vga_print("\nInterrupt: ");
-	vga_print_dec(interrupt_number);
-	vga_print("\n");
 	if (idt_handlers[interrupt_number])
 	{
 		idt_handlers[interrupt_number]();

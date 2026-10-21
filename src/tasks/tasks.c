@@ -12,7 +12,7 @@ static uint32_t s_next_pid = 1;
 
 #define USER_LAND_START SIZE_128_MB
 
-#if 0
+#if 1
 #define DEFAULT_USER_EFLAGS 0x0202
 #else
 #define DEFAULT_USER_EFLAGS 0x0002

@@ -6,4 +6,5 @@ db 'bin.hello.1', 0
 start:
     xor eax, eax
     add eax, 1
+    ;int 0x80
     jmp $
