@@ -45,8 +45,10 @@ struct idt_descriptor_entry
 static struct idt_descriptor	   idt_descriptor			 = {0};
 static struct idt_descriptor_entry idt_entries[IDT_ENTRIES]	 = {0};
 static idt_handler_t			   idt_handlers[IDT_ENTRIES] = {0};
+static uint32_t					   kernel_apis[30];
 
 extern void load_idt(void* idt_descriptor);
+extern void idt_int80h_handler(void);
 void		idt_dispatcher(uint32_t interrupt_number);
 
 static void PIC_sendEOI(uint8_t irq);
@@ -67,13 +69,10 @@ static void idt_default_handler(void)
 	vga_print("Unhandled interrupt\n");
 }
 
-static void idt_int80h_handler(void)
-{
-	vga_print("Interrupt 80h called\n");
-}
-
 error_t idt_init(void)
 {
+	memset(&kernel_apis, 0, sizeof(kernel_apis));
+
 	error_t err = OK;
 	memset(&idt_descriptor, 0, sizeof(idt_descriptor));
 	memset(&idt_entries, 0, sizeof(idt_entries));
@@ -93,7 +92,7 @@ error_t idt_init(void)
 		}
 	}
 
-	err = idt_setup((uint8_t)0x80, INTERRUPT_GATE_32, PRIVILEGE_RING_0, KERNEL_CODE_SEGMENT, idt_int80h_handler);
+	err = idt_setup((uint8_t)0x80, INTERRUPT_GATE_32, PRIVILEGE_RING_3, KERNEL_CODE_SEGMENT, idt_int80h_handler);
 
 	if (err != OK)
 	{
@@ -155,16 +154,23 @@ static error_t idt_setup(uint8_t	   interrupt_number,
 	entry->flags				   = (gate_type & 0x0F) | ((privilege_level & 0x03) << 5) | 0x80;
 
 	void* handler_ptr = 0;
-	switch (interrupt_number)
+	if (interrupt_number == 0x80)
 	{
+		handler_ptr = (void*)handler;
+	}
+	else
+	{
+		switch (interrupt_number)
+		{
 #define IDT_HANDLER(number)                                                                                            \
 	case number:                                                                                                       \
 		handler_ptr = (void*)isr##number;                                                                              \
 		break;
 #include "idt.def"
 #undef IDT_HANDLER
-	default:
-		return ERROR_INVALID_INTERRUPT_NUMBER;
+		default:
+			return ERROR_INVALID_INTERRUPT_NUMBER;
+		}
 	}
 
 	entry->offset_low  = (uint16_t)((uint32_t)handler_ptr & 0xFFFF);

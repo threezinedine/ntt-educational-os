@@ -1,8 +1,43 @@
 section .text
 
 extern idt_dispatcher
+extern vga_print
 
 global load_idt
+global idt_int80h_handler
+
+api_tables:
+    dd _vga_print
+
+_vga_print:
+    push ebx
+    call vga_print
+    add esp, 4
+    ret
+
+idt_int80h_handler:
+    push ds
+    push es
+    push fs
+    push gs
+    pushad
+
+    mov edx, 0x10
+    mov ds, dx
+    mov es, dx
+    mov fs, dx
+    mov gs, dx
+
+    ; Check if eax is valid syscall index
+    call [api_tables + eax * 4]
+
+.syscall_done:
+    popad
+    pop gs
+    pop fs
+    pop es
+    pop ds
+    iret
 
 load_idt: 
     mov eax, [esp + 4]
