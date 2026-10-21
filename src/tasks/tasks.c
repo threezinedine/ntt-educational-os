@@ -10,7 +10,7 @@ static uint32_t s_next_pid = 1;
 #define SIZE_64_MB		  0x4000000
 #define SIZE_128_MB		  0x8000000
 
-#define USER_LAND_START SIZE_64_MB
+#define USER_LAND_START SIZE_128_MB
 
 #if 0
 #define DEFAULT_USER_EFLAGS 0x0202
@@ -25,7 +25,7 @@ struct task* task_create(const char* exe)
 	pTask->state			= TASK_STATE_WAITING;
 	pTask->kernel_stack_top = (uint32_t)kzalloc(KERNEL_STACK_SIZE) + KERNEL_STACK_SIZE;
 	pTask->kernel_esp		= pTask->kernel_stack_top;
-	pTask->page_directory	= page_create_page_directory_with_share(0x0, SIZE_64_MB, SIZE_64_MB);
+	pTask->page_directory	= page_create_page_directory_with_share(0x0, USER_LAND_START, SIZE_64_MB);
 	pTask->pNext			= NULL;
 
 	// Find the executable in the memory
