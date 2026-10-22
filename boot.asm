@@ -17,7 +17,7 @@ start:
     sti
 
     push 0x0500 ; address
-    push 56     ; sectors count (0x500 + 56*512 must stay below 0x7C00)
+    push 58     ; sectors count (0x500 + 58*512 = 0x7900, stays below 0x7C00)
     push 0x02   ; sector index
     push 0x00   ; head
     push 0x00   ; cylinder
