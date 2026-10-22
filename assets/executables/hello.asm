@@ -8,9 +8,9 @@ start:
     xor eax, eax
     mov [esp], eax
 
-    mov ebx, counting_program
-    mov eax, 3
-    int 0x80
+    ;mov ebx, counting_program
+    ;mov eax, 2
+    ;int 0x80
 
     mov eax, 0
 
@@ -28,8 +28,9 @@ main_loop:
     mov eax, 1
     int 0x80
 
-    mov eax, 2
-    int 0x80
+    push 0x2fffffff
+    call delay_1ms
+    add esp, 4
 
     mov eax, [esp]
 
@@ -44,3 +45,21 @@ db 10, 'Counting from hello: ', 0
 
 counting_program:
 db 'counting'
+
+delay_1ms:
+    sub esp, 4
+    mov eax, 0
+    mov [esp], eax
+
+    jmp _delay_1ms_end_loop
+    
+_delay_1ms_main_loop:
+    add eax, 1
+
+_delay_1ms_end_loop:
+    mov ebx, [esp + 8]
+    cmp eax, ebx
+    jl _delay_1ms_main_loop
+
+    add esp, 4
+    ret

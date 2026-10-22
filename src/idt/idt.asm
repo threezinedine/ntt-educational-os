@@ -5,6 +5,8 @@ extern vga_print
 extern vga_print_dec
 extern task_create
 extern task_run
+extern idt_enable_timer
+extern idt_disable_timer
 
 global load_idt
 global idt_int80h_handler
@@ -12,13 +14,7 @@ global idt_int80h_handler
 api_tables:
     dd _vga_print
     dd _vga_print_dec
-    dd _delay_1s_asm
     dd _task_execute
-
-_delay_1s_asm:
-    push ebx
-    push ecx
-    mov ecx, 20               ; Run 20 sub-intervals
 
 .interval_loop:
     ; Configure PIT Channel 2: Mode 0, LSB then MSB

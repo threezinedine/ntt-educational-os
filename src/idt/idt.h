@@ -17,4 +17,7 @@ error_t idt_set_handler(uint8_t irq, idt_handler_t handler);
 void idt_enable_irq(uint8_t irq);
 void idt_disable_irq(uint8_t irq);
 
+void idt_enable_timer();
+void idt_disable_timer();
+
 #endif /* _IDT_H_ */

@@ -73,11 +73,13 @@ static uint32_t timer_ticks = 0;
 
 static void timer_callback(void)
 {
+#if 0 // Disable interrupts while handling the timer
 	timer_ticks++;
-	if (timer_ticks % 1000 == 0)
-	{
-		vga_print("[1s tick]\n");
-	}
+	vga_print("[1ms tick] ");
+	vga_print("Ticks: ");
+	vga_print_dec(timer_ticks);
+	vga_print("\n");
+#endif
 }
 
 static void pit_init(uint16_t frequency)
@@ -125,7 +127,7 @@ error_t idt_init(void)
 		goto out;
 	}
 
-#if 0
+#if 1
 	// Register timer handler for IRQ 0 (vector 0x20 = PIC_TIMER_IRQ)
 	err = idt_set_handler(PIC_TIMER_IRQ, timer_callback);
 	if (err != OK)
@@ -220,15 +222,6 @@ static error_t idt_setup(uint8_t	   interrupt_number,
 
 void idt_dispatcher(uint32_t interrupt_number)
 {
-#if 0
-	if (idt_handlers[interrupt_number] == idt_default_handler)
-	{
-		vga_print("Unhandled interrupt: ");
-		vga_print_dec(interrupt_number);
-		vga_print("\n");
-	}
-#endif
-
 	if (idt_handlers[interrupt_number])
 	{
 		idt_handlers[interrupt_number]();
@@ -321,4 +314,14 @@ static void IRQ_clear_mask(uint8_t irq)
 	}
 	value = inb(port) & ~(1 << irq);
 	outb(port, value);
+}
+
+void idt_enable_timer()
+{
+	IRQ_clear_mask(TIMER_IRQ);
+}
+
+void idt_disable_timer()
+{
+	IRQ_set_mask(TIMER_IRQ);
 }
