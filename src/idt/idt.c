@@ -69,6 +69,32 @@ static void idt_default_handler(void)
 	vga_print("Unhandled interrupt\n");
 }
 
+static uint32_t timer_ticks = 0;
+
+static void timer_callback(void)
+{
+	timer_ticks++;
+	if (timer_ticks % 1000 == 0)
+	{
+		vga_print("[1s tick]\n");
+	}
+}
+
+static void pit_init(uint16_t frequency)
+{
+	// Divisor must fit in a 16-bit unsigned integer (1 - 65535)
+	uint32_t divisor = 1193182 / frequency;
+	if (divisor == 0) divisor = 1;
+	if (divisor > 65535) divisor = 65535;
+
+	// Mode 2 (Rate generator), Channel 0, lobyte/hibyte, 16-bit binary
+	outb(0x43, 0x34);
+
+	// Send frequency divisor (low byte, then high byte)
+	outb(0x40, (uint8_t)(divisor & 0xFF));
+	outb(0x40, (uint8_t)((divisor >> 8) & 0xFF));
+}
+
 error_t idt_init(void)
 {
 	memset(&kernel_apis, 0, sizeof(kernel_apis));
@@ -99,6 +125,15 @@ error_t idt_init(void)
 		goto out;
 	}
 
+#if 0
+	// Register timer handler for IRQ 0 (vector 0x20 = PIC_TIMER_IRQ)
+	err = idt_set_handler(PIC_TIMER_IRQ, timer_callback);
+	if (err != OK)
+	{
+		goto out;
+	}
+#endif
+
 	load_idt(&idt_descriptor);
 
 	PIC_remap(PIC_OFFSET_1, PIC_OFFSET_2); // Remap PIC to avoid conflicts with CPU exceptions
@@ -108,6 +143,10 @@ error_t idt_init(void)
 	{
 		IRQ_set_mask(irq);
 	}
+
+	// Initialize PIT to 1000 Hz (1ms tick) and unmask IRQ 0
+	pit_init(1000);
+	// idt_enable_irq(TIMER_IRQ);
 
 out:
 	return err;
@@ -181,6 +220,15 @@ static error_t idt_setup(uint8_t	   interrupt_number,
 
 void idt_dispatcher(uint32_t interrupt_number)
 {
+#if 0
+	if (idt_handlers[interrupt_number] == idt_default_handler)
+	{
+		vga_print("Unhandled interrupt: ");
+		vga_print_dec(interrupt_number);
+		vga_print("\n");
+	}
+#endif
+
 	if (idt_handlers[interrupt_number])
 	{
 		idt_handlers[interrupt_number]();

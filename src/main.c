@@ -37,6 +37,7 @@ void kernel_main()
 	page_enable_paging();
 
 	struct task* pTask = task_create("hello");
+	// idt_enable_irq(TIMER_IRQ);
 	task_run(pTask);
 
 #if 0
