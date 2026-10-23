@@ -83,8 +83,14 @@ error_t task_run(struct task* pTask)
 	set_tss_esp0(pTask->kernel_esp);
 
 	// switch to user land
-	switch_to_user_land(
-		pTask->code_start, USER_CODE_SEGMENT, DEFAULT_USER_EFLAGS, USER_LAND_START + SIZE_64_MB, USER_DATA_SEGMENT);
+	prepare_user_land(&pTask->kernel_esp,
+					  pTask->code_start,
+					  USER_CODE_SEGMENT,
+					  DEFAULT_USER_EFLAGS,
+					  USER_LAND_START + SIZE_64_MB,
+					  USER_DATA_SEGMENT);
+
+	switch_to_user_land(pTask->kernel_esp);
 
 out:
 	return result;
