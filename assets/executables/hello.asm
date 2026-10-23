@@ -8,9 +8,9 @@ start:
     xor eax, eax
     mov [esp], eax
 
-    ;mov ebx, counting_program
-    ;mov eax, 2
-    ;int 0x80
+    mov ebx, counting_program
+    mov eax, 2
+    int 0x80
 
     mov eax, 0
 

@@ -4,7 +4,9 @@
 #include "memory/memory.h"
 #include "utils/utils.h"
 
-static uint32_t s_next_pid = 1;
+static uint32_t		s_next_pid	   = 1;
+static struct task* s_task_head	   = NULL;
+static struct task* s_current_task = NULL;
 
 #define KERNEL_STACK_SIZE 4096
 #define SIZE_64_MB		  0x4000000
@@ -55,6 +57,21 @@ struct task* task_create(const char* exe)
 
 		pTask->code_sector_count = buffer[4 + strlen(exe) + 1] - '0';
 		break;
+	}
+
+	if (s_task_head == NULL)
+	{
+		s_task_head	   = pTask;
+		s_current_task = pTask;
+	}
+	else
+	{
+		struct task* pCurrent = s_task_head;
+		while (pCurrent->pNext != NULL)
+		{
+			pCurrent = pCurrent->pNext;
+		}
+		pCurrent->pNext = pTask;
 	}
 
 	return pTask;
@@ -108,4 +125,30 @@ void task_destroy(struct task* pTask)
 	page_destroy_page_directory(pTask->page_directory);
 
 	kfree(pTask);
+}
+
+void task_switch()
+{
+	if (s_task_head == NULL)
+	{
+		return;
+	}
+
+	struct task* pCurrent = s_current_task;
+	struct task* pNext	  = pCurrent->pNext;
+
+	if (pNext == NULL)
+	{
+		pNext = s_task_head;
+	}
+
+	if (pNext == pCurrent)
+	{
+		return;
+	}
+
+	s_current_task = pNext;
+	page_switch_page_directory(pNext->page_directory);
+	set_tss_esp0(pNext->kernel_esp);
+	switch_to_user_land(pNext->kernel_esp);
 }

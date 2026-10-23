@@ -25,6 +25,10 @@ main_loop:
     mov ebx, [esp]
     mov eax, 1
     int 0x80
+    
+    push 0x2fffffff
+    call delay_1ms
+    add esp, 4
 
     mov eax, [esp + 4]
 
@@ -43,7 +47,6 @@ message:
 
 finish_message:
     db 10, 'Done!', 0
-
 
 delay_1ms:
     sub esp, 4

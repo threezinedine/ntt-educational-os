@@ -1,4 +1,5 @@
 #include "idt.h"
+#include "tasks/tasks.h"
 #include "utils/utils.h"
 #include "vga/vga.h"
 
@@ -73,6 +74,7 @@ static uint32_t timer_ticks = 0;
 
 static void timer_callback(void)
 {
+	task_switch();
 #if 0 // Disable interrupts while handling the timer
 	timer_ticks++;
 	vga_print("[1ms tick] ");
