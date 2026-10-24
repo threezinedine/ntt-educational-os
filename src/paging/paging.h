@@ -12,7 +12,7 @@ page_directory_t page_create_page_directory(uint32_t size, uint8_t root_page);
 page_directory_t page_create_page_directory_with_share(uint32_t kernel_start, uint32_t size, uint32_t user_size);
 error_t			 page_destroy_page_directory(page_directory_t page_directory);
 error_t			 page_enable_paging();
-error_t			 page_switch_page_directory(page_directory_t page_directory);
+error_t			 page_switch_page_directory(page_directory_t* pPage_directory);
 error_t			 page_shutdown();
 
 #endif // _PAGING_H_

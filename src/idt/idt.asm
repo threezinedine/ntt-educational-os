@@ -61,9 +61,9 @@ _task_execute:
     push ebx 
     call task_create
     add esp, 4
-    push eax
-    call task_run
-    add esp, 4
+    ; push eax
+    ; call task_run
+    ; add esp, 4
     ret
 
 idt_int80h_handler:

@@ -44,7 +44,7 @@ message:
 db 10, 'Counting from hello: ', 0
 
 counting_program:
-db 'counting'
+db 'counting', 0
 
 delay_1ms:
     sub esp, 4

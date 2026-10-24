@@ -61,8 +61,7 @@ struct task* task_create(const char* exe)
 
 	if (s_task_head == NULL)
 	{
-		s_task_head	   = pTask;
-		s_current_task = pTask;
+		s_task_head = pTask;
 	}
 	else
 	{
@@ -89,25 +88,35 @@ error_t task_run(struct task* pTask)
 		goto out;
 	}
 
-	page_switch_page_directory(pTask->page_directory);
-
 	if (pTask->loaded == 0)
 	{
+		page_switch_page_directory(pTask->page_directory);
 		load_task_code(pTask);
 		pTask->loaded = 1;
 	}
 
-	set_tss_esp0(pTask->kernel_esp);
+	if (s_current_task == NULL)
+	{
+		set_tss_esp0(pTask->kernel_esp);
+		s_current_task = pTask;
+	}
+	else
+	{
+		page_switch_page_directory(s_current_task->page_directory);
+	}
 
 	// switch to user land
 	prepare_user_land(&pTask->kernel_esp,
 					  pTask->code_start,
 					  USER_CODE_SEGMENT,
 					  DEFAULT_USER_EFLAGS,
-					  USER_LAND_START + SIZE_64_MB,
+					  USER_LAND_START + SIZE_64_MB - 4,
 					  USER_DATA_SEGMENT);
 
-	switch_to_user_land(pTask->kernel_esp);
+	if (s_current_task == pTask)
+	{
+		switch_to_user_land(pTask->kernel_esp);
+	}
 
 out:
 	return result;
@@ -129,7 +138,7 @@ void task_destroy(struct task* pTask)
 
 void task_switch()
 {
-	if (s_task_head == NULL)
+	if (s_task_head == NULL || s_current_task == NULL)
 	{
 		return;
 	}
@@ -148,7 +157,21 @@ void task_switch()
 	}
 
 	s_current_task = pNext;
-	page_switch_page_directory(pNext->page_directory);
-	set_tss_esp0(pNext->kernel_esp);
-	switch_to_user_land(pNext->kernel_esp);
+
+	if (pNext->loaded == 0)
+	{
+		page_switch_page_directory(pNext->page_directory);
+		load_task_code(pNext);
+		pNext->loaded = 1;
+		prepare_user_land(&pNext->kernel_esp,
+						  pNext->code_start,
+						  USER_CODE_SEGMENT,
+						  DEFAULT_USER_EFLAGS,
+						  USER_LAND_START + SIZE_64_MB - 4,
+						  USER_DATA_SEGMENT);
+	}
+
+	page_switch_page_directory(s_current_task->page_directory);
+	set_tss_esp0(s_current_task->kernel_esp);
+	internal_switch_to_user_land(s_current_task->kernel_esp, &pCurrent->kernel_esp);
 }

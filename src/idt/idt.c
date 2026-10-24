@@ -224,17 +224,17 @@ static error_t idt_setup(uint8_t	   interrupt_number,
 
 void idt_dispatcher(uint32_t interrupt_number)
 {
-	if (idt_handlers[interrupt_number])
-	{
-		idt_handlers[interrupt_number]();
-	}
-
 	/* Hardware IRQs are remapped to vectors PIC_OFFSET_1..PIC_OFFSET_1+15.
 	 * The PIC must be told the interrupt has been handled, otherwise it will
 	 * not deliver any further interrupts of equal or lower priority. */
 	if (interrupt_number >= PIC_OFFSET_1 && interrupt_number < (PIC_OFFSET_1 + 16))
 	{
 		PIC_sendEOI((uint8_t)(interrupt_number - PIC_OFFSET_1));
+	}
+
+	if (idt_handlers[interrupt_number])
+	{
+		idt_handlers[interrupt_number]();
 	}
 }
 
