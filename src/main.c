@@ -12,6 +12,8 @@
 
 #define SIZE_128_MB (128 * 1024 * 1024)
 #define SIZE_64_MB	(64 * 1024 * 1024)
+#define SIZE_1_MB	(1024 * 1024)
+#define SIZE_512_KB (512 * 1024)
 
 void kernel_main()
 {

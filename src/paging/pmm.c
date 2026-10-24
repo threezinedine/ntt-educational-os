@@ -54,6 +54,8 @@ void* pmm_get_free_segment()
 		}
 	}
 
+	panic("No free memory segments available");
+
 	return NULL;
 }
 

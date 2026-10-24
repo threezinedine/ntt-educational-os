@@ -4,13 +4,15 @@
 #include "memory/memory.h"
 #include "utils/utils.h"
 
-static uint32_t		s_next_pid	   = 1;
-static struct task* s_task_head	   = NULL;
-static struct task* s_current_task = NULL;
+static uint32_t s_next_pid	   = 1;
+struct task*	s_task_head	   = NULL;
+struct task*	s_current_task = NULL;
 
 #define KERNEL_STACK_SIZE 4096
-#define SIZE_64_MB		  0x4000000
-#define SIZE_128_MB		  0x8000000
+#define SIZE_128_MB		  (128 * 1024 * 1024)
+#define SIZE_64_MB		  (64 * 1024 * 1024)
+#define SIZE_1_MB		  (1024 * 1024)
+#define SIZE_512_KB		  (512 * 1024)
 
 #define USER_LAND_START SIZE_128_MB
 
@@ -20,14 +22,16 @@ static struct task* s_current_task = NULL;
 #define DEFAULT_USER_EFLAGS 0x0002
 #endif
 
+static void load_task_code(struct task* pTask);
+
 struct task* task_create(const char* exe)
 {
 	struct task* pTask		= (struct task*)kzalloc(sizeof(struct task));
 	pTask->pid				= s_next_pid++;
 	pTask->state			= TASK_STATE_WAITING;
-	pTask->kernel_stack_top = (uint32_t)kzalloc(KERNEL_STACK_SIZE) + KERNEL_STACK_SIZE;
+	pTask->kernel_stack_top = (uint32_t)kzalloc(KERNEL_STACK_SIZE) + KERNEL_STACK_SIZE - 4;
 	pTask->kernel_esp		= pTask->kernel_stack_top;
-	pTask->page_directory	= page_create_page_directory_with_share(0x0, USER_LAND_START, SIZE_64_MB);
+	pTask->page_directory	= page_create_page_directory_with_share(0x0, USER_LAND_START, SIZE_1_MB);
 	pTask->pNext			= NULL;
 
 	// Find the executable in the memory
@@ -73,10 +77,24 @@ struct task* task_create(const char* exe)
 		pCurrent->pNext = pTask;
 	}
 
+	page_switch_page_directory(pTask->page_directory);
+	load_task_code(pTask);
+	pTask->loaded = 1;
+
+	prepare_user_land(&pTask->kernel_esp,
+					  pTask->code_start,
+					  USER_CODE_SEGMENT,
+					  DEFAULT_USER_EFLAGS,
+					  USER_LAND_START + SIZE_1_MB - 4,
+					  USER_DATA_SEGMENT);
+
+	if (s_current_task != NULL && s_current_task != pTask)
+	{
+		page_switch_page_directory(s_current_task->page_directory);
+	}
+
 	return pTask;
 }
-
-static void load_task_code(struct task* pTask);
 
 error_t task_run(struct task* pTask)
 {
@@ -88,35 +106,11 @@ error_t task_run(struct task* pTask)
 		goto out;
 	}
 
-	if (pTask->loaded == 0)
-	{
-		page_switch_page_directory(pTask->page_directory);
-		load_task_code(pTask);
-		pTask->loaded = 1;
-	}
+	s_current_task = pTask;
+	set_tss_esp0(pTask->kernel_esp);
+	page_switch_page_directory(pTask->page_directory);
 
-	if (s_current_task == NULL)
-	{
-		set_tss_esp0(pTask->kernel_esp);
-		s_current_task = pTask;
-	}
-	else
-	{
-		page_switch_page_directory(s_current_task->page_directory);
-	}
-
-	// switch to user land
-	prepare_user_land(&pTask->kernel_esp,
-					  pTask->code_start,
-					  USER_CODE_SEGMENT,
-					  DEFAULT_USER_EFLAGS,
-					  USER_LAND_START + SIZE_64_MB - 4,
-					  USER_DATA_SEGMENT);
-
-	if (s_current_task == pTask)
-	{
-		switch_to_user_land(pTask->kernel_esp);
-	}
+	switch_to_user_land(pTask->kernel_esp);
 
 out:
 	return result;
@@ -136,42 +130,23 @@ void task_destroy(struct task* pTask)
 	kfree(pTask);
 }
 
-void task_switch()
+bool task_next_task()
 {
-	if (s_task_head == NULL || s_current_task == NULL)
-	{
-		return;
-	}
-
-	struct task* pCurrent = s_current_task;
-	struct task* pNext	  = pCurrent->pNext;
-
-	if (pNext == NULL)
+	struct task* pNext = NULL;
+	if (s_current_task == NULL)
 	{
 		pNext = s_task_head;
 	}
-
-	if (pNext == pCurrent)
+	else
 	{
-		return;
+		pNext = s_current_task->pNext;
+		if (pNext == NULL)
+		{
+			pNext = s_task_head;
+		}
 	}
 
+	bool has_next  = (pNext != s_current_task);
 	s_current_task = pNext;
-
-	if (pNext->loaded == 0)
-	{
-		page_switch_page_directory(pNext->page_directory);
-		load_task_code(pNext);
-		pNext->loaded = 1;
-		prepare_user_land(&pNext->kernel_esp,
-						  pNext->code_start,
-						  USER_CODE_SEGMENT,
-						  DEFAULT_USER_EFLAGS,
-						  USER_LAND_START + SIZE_64_MB - 4,
-						  USER_DATA_SEGMENT);
-	}
-
-	page_switch_page_directory(s_current_task->page_directory);
-	set_tss_esp0(s_current_task->kernel_esp);
-	internal_switch_to_user_land(s_current_task->kernel_esp, &pCurrent->kernel_esp);
+	return has_next;
 }

@@ -14,7 +14,6 @@ enum task_state
 struct task
 {
 	uint32_t		 pid;
-	enum task_state	 state;
 	uint32_t		 kernel_esp;
 	uint32_t		 kernel_stack_top;
 	page_directory_t page_directory; // has the memory setup here
@@ -22,6 +21,7 @@ struct task
 	uint32_t		 code_sector_index;
 	uint32_t		 code_sector_count;
 	uint32_t		 code_start;
+	enum task_state	 state;
 	bool			 loaded;
 };
 

@@ -49,6 +49,7 @@ static idt_handler_t			   idt_handlers[IDT_ENTRIES] = {0};
 static uint32_t					   kernel_apis[30];
 
 extern void load_idt(void* idt_descriptor);
+extern void task_switch(void);
 extern void idt_int80h_handler(void);
 void		idt_dispatcher(uint32_t interrupt_number);
 
@@ -71,18 +72,6 @@ static void idt_default_handler(void)
 }
 
 static uint32_t timer_ticks = 0;
-
-static void timer_callback(void)
-{
-	task_switch();
-#if 0 // Disable interrupts while handling the timer
-	timer_ticks++;
-	vga_print("[1ms tick] ");
-	vga_print("Ticks: ");
-	vga_print_dec(timer_ticks);
-	vga_print("\n");
-#endif
-}
 
 static void pit_init(uint16_t frequency)
 {
@@ -128,15 +117,6 @@ error_t idt_init(void)
 	{
 		goto out;
 	}
-
-#if 1
-	// Register timer handler for IRQ 0 (vector 0x20 = PIC_TIMER_IRQ)
-	err = idt_set_handler(PIC_TIMER_IRQ, timer_callback);
-	if (err != OK)
-	{
-		goto out;
-	}
-#endif
 
 	load_idt(&idt_descriptor);
 
@@ -197,7 +177,11 @@ static error_t idt_setup(uint8_t	   interrupt_number,
 	entry->flags				   = (gate_type & 0x0F) | ((privilege_level & 0x03) << 5) | 0x80;
 
 	void* handler_ptr = 0;
-	if (interrupt_number == 0x80)
+	if (interrupt_number == PIC_TIMER_IRQ)
+	{
+		handler_ptr = (void*)task_switch;
+	}
+	else if (interrupt_number == 0x80)
 	{
 		handler_ptr = (void*)handler;
 	}
@@ -232,9 +216,18 @@ void idt_dispatcher(uint32_t interrupt_number)
 		PIC_sendEOI((uint8_t)(interrupt_number - PIC_OFFSET_1));
 	}
 
-	if (idt_handlers[interrupt_number])
+	if (interrupt_number != PIC_TIMER_IRQ && idt_handlers[interrupt_number])
 	{
-		idt_handlers[interrupt_number]();
+		if (idt_handlers[interrupt_number] != idt_default_handler)
+		{
+			idt_handlers[interrupt_number]();
+		}
+		else
+		{
+			vga_print("Unhandled interrupt: ");
+			vga_print_hex(interrupt_number);
+			vga_print("\n");
+		}
 	}
 }
 

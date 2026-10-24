@@ -2,9 +2,14 @@
 #include "memory/kheap.h"
 #include "pmm.h"
 
-#define SIZE_128_MB			 (128 * 1024 * 1024)
-#define SIZE_4GB			 (4 * 1024 * 1024 * 1024)
+#define SIZE_1_MB	(1024 * 1024)
+#define SIZE_512_KB (512 * 1024)
+
+#if 0
 #define PHYSICAL_PAGES_COUNT (SIZE_4GB / PAGE_SEGMENT_SIZE) // Example value, adjust as needed
+#else
+#define PHYSICAL_PAGES_COUNT (1024 * 4)
+#endif
 
 #define PRESENT_PAGE		 (1 << 0)
 #define WRITABLE_PAGE		 (1 << 1)
@@ -156,6 +161,11 @@ page_directory_t page_create_page_directory_with_share(uint32_t kernel_start, ui
 			}
 
 			size_counter += PAGE_SEGMENT_SIZE;
+
+			if (size_counter >= kernel_size + user_size)
+			{
+				break;
+			}
 		}
 
 		current_page_table += page_table_size;
