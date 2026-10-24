@@ -28,7 +28,7 @@ main_loop:
     mov eax, 1
     int 0x80
 
-    push 0x2fffffff
+    push 0x1fffffff
     call delay_1ms
     add esp, 4
 
