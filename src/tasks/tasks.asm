@@ -89,13 +89,6 @@ task_switch: ; void()
     add esp, 4
     mov ebx, [s_current_task]
 
-    ; mov eax, s_current_task
-    ; mov eax, [eax]
-    ; mov eax, [eax + 4] ; kernel_esp
-    ; ; Switch page directory
-    ; mov eax, [ebx + 12] ; page_directory
-    ; mov cr3, eax
-
     ; Update TSS esp0 to next task's kernel_stack_top (offset 8)
     mov eax, [ebx + 8] ; kernel_stack_top
     push eax
